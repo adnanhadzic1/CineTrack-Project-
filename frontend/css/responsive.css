@@ -1,0 +1,89 @@
+/* ==========================================================================
+   CineTrack - responsive layout (Milestone 1)
+   Desktop first. Breakpoints: 1100px (small laptop), 900px (tablet: sidebar becomes a drawer),
+   640px (phone).
+   ========================================================================== */
+
+@media (max-width: 1100px) {
+  .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dash-columns { grid-template-columns: minmax(0, 1fr); }
+  .profile-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 900px) {
+  /* Sidebar turns into a slide-in drawer, opened with the menu button */
+  .app-shell { display: block; }
+  .sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0; z-index: 60; width: min(288px, 86vw);
+    transform: translateX(-100%); visibility: hidden;
+    transition: transform 0.2s ease, visibility 0.2s;
+  }
+  .nav-open .sidebar { transform: none; visibility: visible; box-shadow: var(--shadow); }
+  .sidebar-overlay { position: fixed; inset: 0; z-index: 50; background: rgba(4, 8, 16, 0.6); }
+  .nav-open .sidebar-overlay { display: block; }
+  .menu-btn { display: inline-grid; }
+  .topbar { padding: 10px 16px; gap: 10px; }
+  .user-chip-text { display: none; }
+  #main { padding: 20px 16px 32px; }
+  .app-footer { padding: 16px; }
+
+  .auth-layout { grid-template-columns: minmax(0, 1fr); }
+  .auth-aside { display: none; }
+
+  .detail { grid-template-columns: 160px minmax(0, 1fr); gap: 20px; }
+}
+
+@media (max-width: 640px) {
+  .page-title { font-size: 1.5rem; }
+  .hero { padding: 22px 18px; }
+  .hero h1 { font-size: 1.6rem; }
+  .hero-actions, .hero-actions .btn { width: 100%; }
+  .stat-row { gap: 10px; }
+  .stat { padding: 14px; }
+  .stat-value { font-size: 1.8rem; }
+
+  .title-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .rail { grid-auto-columns: 140px; }
+
+  .continue-row { grid-template-columns: 56px minmax(0, 1fr); }
+  .continue-row .btn { grid-column: 1 / -1; }
+
+  .search-bar { padding-left: 12px; }
+  .search-bar .btn { display: none; }
+  .filter-bar { align-items: stretch; flex-direction: column; }
+  .segmented { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .segmented[role='group'][aria-label='Filter by status'] { grid-template-columns: repeat(2, 1fr); }
+  .inline-field select { flex: 1; }
+  .results-bar { flex-direction: column; align-items: flex-start; }
+
+  .wl-row { grid-template-columns: 56px minmax(0, 1fr); gap: 14px; }
+  .wl-controls { grid-column: 1 / -1; }
+  .wl-controls select { flex: 1; }
+
+  .review-card { grid-template-columns: 56px minmax(0, 1fr); gap: 14px; padding: 14px; }
+  .review-actions { grid-column: 1 / -1; flex-direction: row; }
+
+  .toolbar { flex-direction: column; align-items: stretch; }
+  .toolbar .btn { width: 100%; }
+
+  /* Tables become stacked cards, each cell labelled with its column name */
+  .table-wrap { border: 0; background: none; overflow: visible; }
+  .data-table, .data-table tbody, .data-table tr, .data-table td { display: block; width: 100%; }
+  .data-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .data-table tr { margin-bottom: 12px; padding: 6px 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+  .data-table td { display: flex; justify-content: space-between; gap: 16px; padding: 8px 14px; border-top: 0; text-align: right; }
+  .data-table td::before { content: attr(data-label); flex: none; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); text-align: left; }
+  .data-table td.row-actions { flex-wrap: wrap; justify-content: flex-end; white-space: normal; }
+  .data-table td.row-actions::before { display: none; }
+  .cell-text { min-width: 0; }
+
+  .modal-backdrop { padding: 0; align-items: end; }
+  .modal { max-width: none; border-radius: 16px 16px 0 0; max-height: 92vh; overflow-y: auto; }
+  .modal-body { padding: 18px; }
+  .detail { grid-template-columns: minmax(0, 1fr); }
+  .detail-poster { max-width: 150px; }
+  .modal-actions { flex-direction: column-reverse; }
+  .modal-actions .btn { width: 100%; }
+
+  .toast-root { right: 16px; left: 16px; bottom: 16px; width: auto; }
+}
