@@ -1,0 +1,21 @@
+<!-- Admin panel skeleton. admin-view.js fills the tiles, tabs, toolbar buttons and the table. -->
+<header class="page-head">
+  <div>
+    <h1 class="page-title">Admin panel</h1>
+    <p class="muted">Manage accounts and shared catalogue data. Sample data only.</p>
+  </div>
+  <span class="badge badge-role-admin">Admin preview</span>
+</header>
+<div class="admin-tiles" aria-label="Totals" data-slot="tiles"></div>
+
+<div class="tabs" role="group" aria-label="Admin sections" data-slot="tabs"></div>
+
+<div class="toolbar">
+  <div class="inline-field grow">
+    <label for="admin-filter" data-bind="filterLabel"></label>
+    <input id="admin-filter" type="search" value="" placeholder="Type to filter" autocomplete="off">
+  </div>
+  <span class="slot" data-slot="toolbarButtons"></span>
+</div>
+
+<div id="admin-table"></div>

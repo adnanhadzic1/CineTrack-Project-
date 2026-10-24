@@ -1,0 +1,28 @@
+<!-- Login screen. Drawn inside the two-panel layout from components/auth-layout.js by login-view.js. -->
+<h1>Welcome back</h1>
+<p class="muted">Log in to continue to your watchlist.</p>
+<p class="notice" role="note"><strong>Prototype:</strong> there is no real login yet. Enter any email and password to open the demo.</p>
+
+<form id="login-form" novalidate>
+  <div class="field">
+    <label for="login-email">Email</label>
+    <input id="login-email" name="login-email" type="email" value="" autocomplete="email" placeholder="you@example.com"
+           aria-describedby="login-email-error" aria-invalid="false">
+    <p class="field-error" id="login-email-error" hidden></p>
+  </div>
+  <div class="field">
+    <label for="login-password">Password</label>
+    <div class="input-group">
+      <input id="login-password" name="login-password" type="password" autocomplete="current-password"
+             aria-describedby="login-password-error" aria-invalid="false">
+      <button type="button" class="input-group-btn" data-toggle-password="login-password" aria-pressed="false" aria-label="Show password">
+        <span data-icon="eye" data-size="18"></span>
+      </button>
+    </div>
+    <p class="field-error" id="login-password-error" hidden></p>
+  </div>
+  <button type="submit" class="btn btn-primary btn-block">Log in</button>
+</form>
+
+<p class="auth-switch">New to CineTrack? <a href="#/register">Create an account</a></p>
+<p class="auth-switch"><a href="#/dashboard">Skip and explore the demo</a></p>

@@ -1,0 +1,22 @@
+<!-- Watchlist page skeleton. watchlist-view.js draws the status tabs and the list of rows. -->
+<header class="page-head">
+  <div>
+    <h1 class="page-title">Your watchlist</h1>
+    <p class="muted">Everything you plan to watch, are watching or have finished.</p>
+  </div>
+  <a class="btn btn-primary" href="#/discover"><span data-icon="plus" data-size="18"></span> Add titles</a>
+</header>
+
+<div class="filter-bar">
+  <div class="segmented segmented-two-columns" id="wl-status" role="group" aria-label="Filter by status"></div>
+  <div class="inline-field">
+    <label for="wl-type">Type</label>
+    <select id="wl-type">
+      <option value="all">All types</option>
+      <option value="movie">Movies</option>
+      <option value="tv">TV shows</option>
+    </select>
+  </div>
+</div>
+<p id="wl-count" class="results-count" aria-live="polite"></p>
+<div id="wl-results"></div>

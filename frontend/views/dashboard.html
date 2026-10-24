@@ -1,0 +1,42 @@
+<!-- Dashboard page skeleton. dashboard-view.js fills the data-bind texts and data-slot lists. -->
+<section class="hero" aria-labelledby="dash-title">
+  <div>
+    <p class="eyebrow">Your dashboard</p>
+    <h1 id="dash-title">Welcome back, <span data-bind="firstName"></span></h1>
+    <p class="hero-text" data-bind="heroText"></p>
+  </div>
+  <div class="hero-actions">
+    <a class="btn btn-primary" href="#/discover"><span data-icon="compass" data-size="18"></span> Discover titles</a>
+    <a class="btn btn-secondary" href="#/reviews"><span data-icon="star" data-size="18"></span> Your reviews</a>
+  </div>
+</section>
+
+<section class="stat-row" aria-label="Your numbers">
+  <a class="stat" href="#/watchlist"><span class="stat-value" data-bind="statTotal"></span><span class="stat-label">In your watchlist</span></a>
+  <a class="stat" href="#/watchlist?status=watching"><span class="stat-value" data-bind="statWatching"></span><span class="stat-label">Currently watching</span></a>
+  <a class="stat" href="#/watchlist?status=completed"><span class="stat-value" data-bind="statCompleted"></span><span class="stat-label">Completed</span></a>
+  <a class="stat" href="#/reviews"><span class="stat-value" data-bind="statReviews"></span><span class="stat-label">Reviews written</span></a>
+</section>
+
+<div class="dash-columns">
+  <section class="panel" aria-labelledby="continue-title">
+    <h2 id="continue-title" class="panel-title">Continue watching</h2>
+    <div data-slot="continue"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="recent-title">
+    <h2 id="recent-title" class="panel-title">Recently updated</h2>
+    <div data-slot="recent"></div>
+  </section>
+</div>
+
+<section aria-labelledby="trending-title">
+  <div class="section-head">
+    <div>
+      <h2 id="trending-title" class="section-title">Trending now</h2>
+      <p class="muted">Titles you have not added yet, most popular first.</p>
+    </div>
+    <a class="btn btn-ghost btn-sm" href="#/discover">Browse all</a>
+  </div>
+  <div data-slot="trending"></div>
+</section>
