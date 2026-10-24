@@ -1,3 +1,4 @@
+
 # CineTrack
 
 CineTrack is a personal movie and TV-series tracker: search for titles, keep a watchlist (planned / watching / completed), and rate and review what you have seen.
@@ -6,7 +7,7 @@ University project for **IT 2001 Web Programming**. Current state: **Milestone 1
 
 | | |
 |---|---|
-| Repository | _Not yet published. The GitHub URL is added here when the repository exists._ |
+| Repository | https://github.com/adnanhadzic1/CineTrack-Project-.git |
 | Deployed app | Not deployed (planned for Milestone 5) |
 | Swagger / API docs | Not available (planned for Milestone 3) |
 | Test accounts | None (real accounts exist from Milestone 4; the M1 login accepts any input and checks nothing) |
@@ -123,3 +124,4 @@ This project was built with AI assistance (Claude, via Claude Code). What was ge
 - **What is weak:** nothing is saved, there is no real authentication or authorization, and the admin screen is only hidden by a visual role switch. The tests I could run were a browser script that is not in this repository, so there is no automated test suite yet.
 - **Trade-offs:** the course lists `views` as HTML templates; here the views are JavaScript modules that render HTML into one `index.html`. Titles can have no TMDB id in the draft ERD so that admin-added titles are possible.
 - **For M2 onward:** the schema must follow the draft ERD (`tmdb_id` nullable), FlightPHP must actually be installed and its version verified, and a repeatable test setup should be added.
+
