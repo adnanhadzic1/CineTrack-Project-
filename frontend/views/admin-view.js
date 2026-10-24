@@ -4,18 +4,19 @@
  * The "Preview role" switch in the sidebar is purely visual: it unlocks nothing real.
  * In Milestone 4 the backend (JWT + role middleware) decides who may call the admin endpoints and answers 403 to everyone else.
  */
-import { esc, mountPage, formatDate, typeLabel } from '../utils/dom.js';
-import { fieldHtml, setFieldError } from '../utils/forms.js';
-import { icon } from '../components/icons.js';
-import { emptyState } from '../components/feedback.js';
-import { starsHtml } from '../components/movie-card.js';
-import { openModal, confirmDialog } from '../components/modal.js';
-import { demoToast } from '../components/toast.js';
+import { esc, mountPage, formatDate, typeLabel } from '../js/utils/dom.js';
+import { fieldHtml, setFieldError } from '../js/utils/forms.js';
+import { icon } from '../js/components/icons.js';
+import { emptyState } from '../js/components/feedback.js';
+import { renderTemplate, bindText, bindHtml } from '../js/services/template-service.js';
+import { starsHtml } from '../js/components/movie-card.js';
+import { openModal, confirmDialog } from '../js/components/modal.js';
+import { demoToast } from '../js/components/toast.js';
 import {
   state, getTitle, getUserName, genreNamesOf, allReviewsForAdmin,
   adminSaveTitle, adminDeleteTitle, adminSaveGenre, adminDeleteGenre,
   adminSetUserRole, adminToggleUserActive, adminDeleteUser, deleteReview,
-} from '../state.js';
+} from '../js/state.js';
 
 const TABS = [
   { id: 'users', label: 'Users' },
@@ -36,18 +37,22 @@ export function renderAdminView(container) {
   // The sidebar hides the Admin link for the "user" preview, but someone can still type #/admin.
   // Show what a 403 will look like in the real app.
   if (state.role !== 'admin') {
-    page.innerHTML = `
-      <h1 class="page-title">Admin</h1>
-      ${emptyState({
+    renderTemplate(page, 'admin-forbidden'); // layout lives in views/admin-forbidden.html
+    bindHtml(page, {
+      forbidden: emptyState({
         iconName: 'lock',
         title: '403 · Administrators only',
-        text: 'This is how the app will respond when a normal user opens an admin page. In Milestone 4 the backend enforces this, not the interface.',
+        text: 'You do not have permission to view this page.',
         actionHtml: '<a class="btn btn-primary" href="#/dashboard">Back to the dashboard</a>',
-      })}`;
+      }),
+    });
     return;
   }
 
   const view = { tab: 'users', filter: '' };
+
+  // True when the text contains what was typed in the filter box (or when the box is empty).
+  const matches = (text) => !view.filter.trim() || text.toLowerCase().includes(view.filter.trim().toLowerCase());
 
   // ---------- table builders (one per entity) ----------
   const tables = {
@@ -108,8 +113,6 @@ export function renderAdminView(container) {
     },
   };
 
-  const matches = (text) => !view.filter.trim() || text.toLowerCase().includes(view.filter.trim().toLowerCase());
-
   function table(headings, rows, emptyText) {
     if (!rows.length) return emptyState({ iconName: 'search', title: 'Nothing to show', text: emptyText });
     return `<div class="table-wrap"><table class="data-table">
@@ -122,43 +125,15 @@ export function renderAdminView(container) {
     const tab = TABS.find((t) => t.id === view.tab);
     const counts = { users: state.users.length, titles: state.titles.length, genres: state.genres.length, reviews: allReviewsForAdmin().length };
 
-    page.innerHTML = `
-      <header class="page-head">
-        <div>
-          <h1 class="page-title">Admin panel</h1>
-          <p class="muted">Manage accounts and shared catalogue data.</p>
-        </div>
-        <span class="badge badge-role-admin">Admin preview</span>
-      </header>
-      <p class="notice" role="note"><strong>Visual prototype.</strong> Actions change demo data in memory only. Real authorization is enforced by the backend in Milestone 4.</p>
-
-      <details class="disclosure">
-        <summary>How admin access will work</summary>
-        <ul>
-          <li>Each account has a role (<code>user</code> or <code>admin</code>) stored in the database and carried in the login token.</li>
-          <li>Backend middleware checks the role on every admin endpoint and answers <strong>401</strong> (not logged in) or <strong>403</strong> (not an admin).</li>
-          <li>Admins moderate shared data. They never see other people's private watchlists, and passwords are only ever stored as hashes.</li>
-        </ul>
-      </details>
-
-      <div class="admin-tiles" aria-label="Totals">
-        ${TABS.map((t) => `<div class="admin-tile"><span class="admin-tile-value">${counts[t.id]}</span><span class="admin-tile-label">${t.label}</span></div>`).join('')}
-      </div>
-
-      <div class="tabs" role="group" aria-label="Admin sections">
-        ${TABS.map((t) => `<button type="button" data-tab="${t.id}" aria-pressed="${t.id === view.tab}">${t.label}</button>`).join('')}
-      </div>
-
-      <div class="toolbar">
-        <div class="inline-field grow">
-          <label for="admin-filter">Filter ${tab.label.toLowerCase()}</label>
-          <input id="admin-filter" type="search" value="${esc(view.filter)}" placeholder="Type to filter" autocomplete="off">
-        </div>
-        ${view.tab === 'titles' ? `<button type="button" class="btn btn-primary" data-title-add>${icon('plus', 18)} Add title</button>` : ''}
-        ${view.tab === 'genres' ? `<button type="button" class="btn btn-primary" data-genre-add>${icon('plus', 18)} Add genre</button>` : ''}
-      </div>
-
-      <div id="admin-table"></div>`;
+    renderTemplate(page, 'admin'); // static layout lives in views/admin.html
+    bindText(page, { filterLabel: `Filter ${tab.label.toLowerCase()}` });
+    bindHtml(page, {
+      tiles: TABS.map((t) => `<div class="admin-tile"><span class="admin-tile-value">${counts[t.id]}</span><span class="admin-tile-label">${t.label}</span></div>`).join(''),
+      tabs: TABS.map((t) => `<button type="button" data-tab="${t.id}" aria-pressed="${t.id === view.tab}">${t.label}</button>`).join(''),
+      toolbarButtons: view.tab === 'titles' ? `<button type="button" class="btn btn-primary" data-title-add>${icon('plus', 18)} Add title</button>`
+        : view.tab === 'genres' ? `<button type="button" class="btn btn-primary" data-genre-add>${icon('plus', 18)} Add genre</button>` : '',
+    });
+    page.querySelector('#admin-filter').value = view.filter;
     paintTable();
   }
 
@@ -179,7 +154,7 @@ export function renderAdminView(container) {
             <select id="tf-type"><option value="movie">Movie</option><option value="tv">TV show</option></select>
           </div>
           ${fieldHtml({ id: 'tf-date', label: 'Release date', type: 'date', value: existing?.releaseDate ?? '' })}
-          <p class="mock-note">Descriptions, posters and ratings are not edited here: they will be read live from TMDB.</p>
+          <p class="mock-note">Descriptions, posters and ratings are not edited here.</p>
           <div class="modal-actions">
             <button type="button" class="btn btn-ghost" data-modal-cancel>Cancel</button>
             <button type="submit" class="btn btn-primary">${existing ? 'Save changes' : 'Add title'}</button>
@@ -246,7 +221,9 @@ export function renderAdminView(container) {
     if (event.target.closest('[data-title-add]')) { openTitleForm(); return; }
     if (event.target.closest('[data-genre-add]')) { openGenreForm(); return; }
 
-    const hit = (attr) => event.target.closest(`[data-${attr}]`)?.dataset[attr.replace(/-(\w)/g, (_, c) => c.toUpperCase())];
+    // For a click on <button data-user-delete="4">, hit('user-delete') returns "4".
+    // It returns undefined when the click was not on a button with that attribute.
+    const hit = (attr) => event.target.closest(`[data-${attr}]`)?.getAttribute(`data-${attr}`);
 
     const titleEdit = hit('title-edit');
     if (titleEdit) { openTitleForm(titleEdit); return; }

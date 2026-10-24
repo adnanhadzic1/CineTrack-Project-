@@ -20,7 +20,7 @@ export const typeChip = (mediaType) =>
   `<span class="type-chip">${icon(mediaType === 'tv' ? 'tv' : 'film', 14)} ${typeLabel(mediaType)}</span>`;
 
 export const ratingPill = (rating) =>
-  rating > 0 ? `<span class="rating-pill" title="Mock community rating">${icon('star', 13)} ${rating.toFixed(1)}</span>` : '';
+  rating > 0 ? `<span class="rating-pill" title="Rating">${icon('star', 13)} ${rating.toFixed(1)}</span>` : '';
 
 /** 1-5 stars for a user's personal review. */
 export function starsHtml(rating) {

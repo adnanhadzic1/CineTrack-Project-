@@ -4,9 +4,6 @@
 export const esc = (value) =>
   String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-export const qs = (selector, root = document) => root.querySelector(selector);
-export const qsa = (selector, root = document) => [...root.querySelectorAll(selector)];
-
 /**
  * Every app view draws into its own wrapper element. The router clears the wrapper when you leave the
  * page, so event listeners attached to it are thrown away too and never pile up on the shared container.
@@ -16,14 +13,6 @@ export function mountPage(container, className = 'page') {
   page.className = className;
   container.appendChild(page);
   return page;
-}
-
-export function debounce(fn, wait = 250) {
-  let timer;
-  return (...args) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => fn(...args), wait);
-  };
 }
 
 export function formatDate(iso) {

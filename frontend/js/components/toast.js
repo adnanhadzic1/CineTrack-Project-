@@ -17,5 +17,5 @@ export function showToast(message, type = 'info', durationMs = 4500) {
   if (durationMs > 0) setTimeout(remove, durationMs);
 }
 
-/** Every simulated action in M1 uses this wording so nobody thinks data was really saved. */
-export const demoToast = (message) => showToast(`${message} (demo only, not saved)`, 'success');
+/** Every simulated action uses this wording so nobody thinks data was really saved. */
+export const demoToast = (message) => showToast(`${message} (demo, not saved)`, 'success');

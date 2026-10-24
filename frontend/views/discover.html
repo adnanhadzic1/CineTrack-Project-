@@ -1,0 +1,38 @@
+<!-- Discover page skeleton. discover-view.js fills the data-slot parts (filters, sort options, genre chips). -->
+<header class="page-head">
+  <div>
+    <h1 class="page-title">Discover</h1>
+    <p class="muted">Search for a movie or TV show and add it to your watchlist.</p>
+  </div>
+</header>
+
+<form class="search-bar" id="discover-search" role="search">
+  <label class="visually-hidden" for="discover-q">Search by title</label>
+  <span data-icon="search" data-size="20"></span>
+  <input id="discover-q" type="search" placeholder="Search by title, for example “Orbit”" autocomplete="off" value="">
+  <button type="submit" class="btn btn-primary">Search</button>
+</form>
+
+<div class="filter-bar">
+  <div class="segmented" role="group" aria-label="Filter by type" data-slot="typeButtons"></div>
+  <div class="inline-field">
+    <label for="discover-sort">Sort by</label>
+    <select id="discover-sort" data-slot="sortOptions"></select>
+  </div>
+</div>
+
+<div class="chip-row" role="group" aria-label="Filter by genre">
+  <button type="button" class="chip" data-genre="all" aria-pressed="true">All genres</button>
+  <span class="slot" data-slot="genreChips"></span>
+</div>
+
+<div class="results-bar">
+  <p id="discover-count" aria-live="polite"></p>
+  <div class="demo-states" role="group" aria-label="Preview other states">
+    <span class="muted">Preview states:</span>
+    <button type="button" class="btn btn-ghost btn-sm" data-preview="loading">Loading</button>
+    <button type="button" class="btn btn-ghost btn-sm" data-preview="error">Error</button>
+  </div>
+</div>
+
+<div id="discover-results"></div>

@@ -6,10 +6,10 @@ University project for **IT 2001 Web Programming**. Current state: **Milestone 1
 
 | | |
 |---|---|
-| Repository | _TBD – add the GitHub URL when the repository is created_ |
-| Deployed app | _TBD – not deployed yet (planned for Milestone 5)_ |
-| Swagger / API docs | _TBD – planned for Milestone 3_ |
-| Test accounts | _TBD – real accounts exist from Milestone 4_ |
+| Repository | _Not yet published. The GitHub URL is added here when the repository exists._ |
+| Deployed app | Not deployed (planned for Milestone 5) |
+| Swagger / API docs | Not available (planned for Milestone 3) |
+| Test accounts | None (real accounts exist from Milestone 4; the M1 login accepts any input and checks nothing) |
 
 ## Current milestone: M1
 
@@ -31,7 +31,7 @@ University project for **IT 2001 Web Programming**. Current state: **Milestone 1
 - **No real authorization.** The "Preview role" switch only shows or hides the admin screen. Anyone can switch it. In Milestone 4 the backend (JWT + role middleware) will enforce roles.
 - **No backend or database.** `backend/` contains the planned folder structure and a config template only. FlightPHP is declared in `backend/composer.json` but is **not installed** (Packagist was not reachable when this was prepared), and the version constraint is unverified.
 - No TMDB integration, API documentation, logging or deployment yet.
-- Automated checks were run with Chromium only (Playwright). Safari and Firefox were not tested.
+- **Browser testing was limited.** During development the app was clicked through by an automated Chromium script (Playwright). That script is **not part of this repository**, so it cannot be re-run from a clone. Firefox, Safari and real phones were not tested. See "Checking the project yourself" below.
 
 ## Technology stack
 
@@ -53,13 +53,14 @@ CineTrack/
 ├── frontend/
 │   ├── index.html            single HTML page (the SPA shell)
 │   ├── css/                  styles.css (theme, components), responsive.css (breakpoints)
+│   ├── views/                HTML templates (login.html, dashboard.html, …) and one <screen>-view.js per screen
+│   ├── assets/               images/ and icons/ (placeholders in M1)
 │   └── js/
 │       ├── app.js            entry point: picks a view for the current route
 │       ├── router.js         tiny hash router
 │       ├── state.js          in-memory demo state (replaced by the API in M4)
 │       ├── data/mock-data.js the ONLY place with mock data (removed in M4)
 │       ├── services/         api-service.js – future home of all backend calls
-│       ├── views/            one file per screen
 │       ├── components/       navigation, cards, modals, toasts, review form, …
 │       └── utils/            small helpers (escaping, form validation)
 ├── backend/                  planned REST API (structure only in M1, see backend/README.md)
@@ -70,7 +71,7 @@ CineTrack/
 └── README.md
 ```
 
-The course document lists "views (HTML templates)" as a frontend folder. In this project the screens are rendered by the JavaScript files in `frontend/js/views/` into the single `index.html` shell, which is how the SPA avoids page reloads. `frontend/assets/` (images, icons) is created but empty, because M1 uses inline SVG icons and generated posters.
+The course document lists "views (HTML templates)" as a frontend folder. `frontend/views/` now contains real HTML template files: `login.html`, `register.html`, `dashboard.html`, `discover.html`, `watchlist.html`, `reviews.html`, `profile.html`, `admin.html` and `admin-forbidden.html` (the page shown instead of the admin panel for a normal user). At start-up `js/services/template-service.js` loads them once with `fetch` (these are static frontend files, not backend calls). Each `<screen>-view.js` draws its template and then fills in the data and attaches event listeners, so navigation still never reloads the page. Lists, tables, cards and modal dialogs are still built by JavaScript from data, because their content depends on the state; only the page layouts live in the templates. Because templates are fetched, the app must be served over HTTP (it never worked from `file://` anyway). `frontend/assets/` (`images/`, `icons/`) holds only `.gitkeep` placeholder files so Git keeps the folders, because M1 uses inline SVG icons and generated posters.
 
 ## Planned data model
 
@@ -96,3 +97,29 @@ Then open <http://localhost:8000/>. Any other static server works too (for examp
 ## Next steps
 
 M2 database + DAOs → M3 services, routes, OpenAPI, TMDB endpoint → M4 authentication, middleware, logging, connected frontend → M5 MVC, validation, deployment. Details and deadlines: [`docs/PLAN.md`](docs/PLAN.md).
+
+## Checking the project yourself
+
+Syntax check of every JavaScript file (needs Node.js), run from the project root:
+
+```bash
+find frontend/js frontend/views -name '*.js' -exec node --check {} \;
+```
+
+No output means no syntax errors. Then start the app (`cd frontend && python3 -m http.server 8000`, open http://localhost:8000/) and check by hand:
+
+- Every sidebar screen opens without a page reload and the browser console stays free of errors.
+- Watchlist: change a status (completed to watching must not keep 100%), remove a title, write a review.
+- Log out and log in again: the role selector must be back on User.
+- Resize the window to tablet and phone width: no horizontal scrolling, the menu button opens the drawer.
+
+## AI assistance
+
+This project was built with AI assistance (Claude, via Claude Code). What was generated, the prompts, the mistakes found and the checks performed are recorded honestly in [`docs/AI_LOG.md`](docs/AI_LOG.md). Project rules for AI assistants are in [`AGENTS.md`](AGENTS.md).
+
+## Reflections (Milestone 1)
+
+- **What worked:** a hash router, one in-memory state module and one file per screen kept the SPA small and easy to follow. Keeping all mock data in a single file makes it clear what must be replaced by the API in M4.
+- **What is weak:** nothing is saved, there is no real authentication or authorization, and the admin screen is only hidden by a visual role switch. The tests I could run were a browser script that is not in this repository, so there is no automated test suite yet.
+- **Trade-offs:** the course lists `views` as HTML templates; here the views are JavaScript modules that render HTML into one `index.html`. Titles can have no TMDB id in the draft ERD so that admin-added titles are possible.
+- **For M2 onward:** the schema must follow the draft ERD (`tmdb_id` nullable), FlightPHP must actually be installed and its version verified, and a repeatable test setup should be added.

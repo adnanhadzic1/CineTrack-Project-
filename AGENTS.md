@@ -32,7 +32,8 @@ view → frontend service → fetch → FlightPHP route → middleware → servi
 - **Middleware** (`backend/middleware/`): authentication (401), role authorization (403), request logging, error handling. Reusable and registered in FlightPHP, never copied into routes.
 - **Services** (`backend/services/`): business rules and validation. The **only** layer that calls DAOs. The TMDB client lives here too.
 - **DAOs** (`backend/dao/`): database access only, through a `BaseDao`. Prepared statements always.
-- **Frontend services** (`frontend/js/services/`): the **only** frontend files that call the backend. Views and components must not call `fetch`.
+- **Frontend services** (`frontend/js/services/`): the **only** frontend files that call `fetch`. `api-service.js` is for the backend (from M4). `template-service.js` loads the static HTML templates from `frontend/views/` and fills them with data; it never talks to the backend. Views and components must not call `fetch`.
+- **Views**: `frontend/views/<screen>.html` holds the page layout (course requirement "views (HTML templates)"). `frontend/views/<screen>-view.js` draws the template, fills `data-bind` / `data-slot` spots (escape anything placed in a slot with `esc()`) and attaches listeners. Every template must be used by a view.
 - Admin permissions do not include reading other users' private watchlists. Watchlist and review queries are always filtered by the user id from the verified JWT, never by a client-supplied user id.
 
 ## Folder structure

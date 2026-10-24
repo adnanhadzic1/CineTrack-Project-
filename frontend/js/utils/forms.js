@@ -30,23 +30,7 @@ export function fieldHtml({ id, label, type = 'text', value = '', autocomplete =
     </div>`;
 }
 
-/** Markup for a password input with a show/hide button (wire it with wirePasswordToggles). */
-export function passwordFieldHtml({ id, label, autocomplete, hint = '' }) {
-  return `
-    <div class="field">
-      <label for="${id}">${esc(label)}</label>
-      <div class="input-group">
-        <input id="${id}" name="${id}" type="password" autocomplete="${autocomplete}"
-               aria-describedby="${id}-error${hint ? ` ${id}-hint` : ''}" aria-invalid="false">
-        <button type="button" class="input-group-btn" data-toggle-password="${id}" aria-pressed="false" aria-label="Show password">
-          ${icon('eye', 18)}
-        </button>
-      </div>
-      ${hint ? `<p class="field-hint" id="${id}-hint">${esc(hint)}</p>` : ''}
-      <p class="field-error" id="${id}-error" hidden></p>
-    </div>`;
-}
-
+/** Wires the show/hide button of password fields (the buttons are part of the login and register templates). */
 export function wirePasswordToggles(root) {
   root.querySelectorAll('[data-toggle-password]').forEach((button) => {
     button.addEventListener('click', () => {

@@ -16,6 +16,14 @@ const NAV_ITEMS = [
   { path: '/admin',     label: 'Admin',     icon: 'shield', adminOnly: true },
 ];
 
+// The shell is rebuilt every time you come back from the login screen. If every rebuild added its own
+// keydown listener to `document`, they would pile up. So there is ONE listener, added once here, and each
+// new shell only replaces the function it calls.
+let closeMenuOnEscape = null;
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && closeMenuOnEscape) closeMenuOnEscape();
+});
+
 export function renderShell(root, { onRoleChange }) {
   root.innerHTML = `
     <div class="app-shell" id="app-shell">
@@ -41,7 +49,7 @@ export function renderShell(root, { onRoleChange }) {
               <option value="user">User</option>
               <option value="admin">Admin</option>
             </select>
-            <p>Visual preview only. In M4 the backend decides your real role.</p>
+            <p>Preview only: changes what you see, not what you can do.</p>
           </div>
           <a class="nav-link" href="#/login">${icon('logout', 20)}<span>Log out</span></a>
         </div>
@@ -62,7 +70,7 @@ export function renderShell(root, { onRoleChange }) {
         <main id="main" tabindex="-1"><div id="view"></div></main>
 
         <footer class="app-footer">
-          <p><strong>Prototype · mock data.</strong> Titles, ratings and posters are placeholders. Movie and TV data will come from TMDB in a later milestone, and the required TMDB attribution will be shown here once it is used.</p>
+          <p><strong>Prototype with sample data.</strong> Titles, posters and ratings are fictional, and changes are not saved when you refresh.</p>
         </footer>
       </div>
     </div>`;
@@ -78,9 +86,10 @@ export function renderShell(root, { onRoleChange }) {
   menuButton.addEventListener('click', () => setOpen(!shell.classList.contains('nav-open')));
   root.querySelector('#sidebar-overlay').addEventListener('click', () => { setOpen(false); menuButton.focus(); });
   root.querySelector('#sidebar').addEventListener('click', (event) => { if (event.target.closest('a')) setOpen(false); });
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && shell.isConnected && shell.classList.contains('nav-open')) { setOpen(false); menuButton.focus(); }
-  });
+  // Tell the single Escape listener (below) how to close the menu of THIS shell.
+  closeMenuOnEscape = () => {
+    if (shell.isConnected && shell.classList.contains('nav-open')) { setOpen(false); menuButton.focus(); }
+  };
 
   root.querySelector('#topbar-search').addEventListener('submit', (event) => {
     event.preventDefault();

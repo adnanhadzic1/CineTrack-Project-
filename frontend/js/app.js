@@ -1,23 +1,24 @@
 /**
  * CineTrack entry point (Milestone 1: static prototype).
  *
- * Flow: the router reads the URL hash -> app.js picks a view -> the view writes HTML into the page
- * and attaches its own event listeners. No full page reloads happen after the first load.
+ * Flow: the router reads the URL hash -> app.js picks a view -> the view draws its HTML template
+ * (frontend/views/*.html), fills in the data and attaches its own event listeners. No full page reloads happen after the first load.
  */
 import { parseHash, startRouter } from './router.js';
 import { renderShell, updateNavigation } from './components/navigation.js';
-import { subscribe } from './state.js';
+import { subscribe, setRolePreview } from './state.js';
 import { emptyState } from './components/feedback.js';
 import { closeModal } from './components/modal.js';
+import { loadTemplates } from './services/template-service.js';
 
-import { renderLoginView } from './views/login-view.js';
-import { renderRegisterView } from './views/register-view.js';
-import { renderDashboardView } from './views/dashboard-view.js';
-import { renderDiscoverView } from './views/discover-view.js';
-import { renderWatchlistView } from './views/watchlist-view.js';
-import { renderReviewsView } from './views/reviews-view.js';
-import { renderProfileView } from './views/profile-view.js';
-import { renderAdminView } from './views/admin-view.js';
+import { renderLoginView } from '../views/login-view.js';
+import { renderRegisterView } from '../views/register-view.js';
+import { renderDashboardView } from '../views/dashboard-view.js';
+import { renderDiscoverView } from '../views/discover-view.js';
+import { renderWatchlistView } from '../views/watchlist-view.js';
+import { renderReviewsView } from '../views/reviews-view.js';
+import { renderProfileView } from '../views/profile-view.js';
+import { renderAdminView } from '../views/admin-view.js';
 
 // layout: 'auth' = full-screen form pages, 'app' = sidebar + top bar
 const ROUTES = {
@@ -60,6 +61,9 @@ function renderRoute(route) {
       currentLayout = 'auth';
       shell = null;
     }
+    // Log out (or any visit to the login/register screens) ends the prototype session:
+    // the "Preview role" choice goes back to a normal user. The demo data itself is not reset.
+    setRolePreview('user');
     container = root.querySelector('#main');
   } else {
     if (currentLayout !== 'app') {
@@ -92,4 +96,8 @@ document.addEventListener('error', (event) => {
   if (event.target instanceof HTMLImageElement && event.target.matches('[data-poster-img]')) event.target.remove();
 }, true);
 
-startRouter(renderRoute);
+// The HTML templates in frontend/views/ are loaded once; after that every page change happens in the browser.
+loadTemplates().then(() => startRouter(renderRoute)).catch((error) => {
+  root.innerHTML = '<main id="main" class="auth-shell"><p class="noscript">CineTrack could not load its page templates. Please check your connection and reload.</p></main>';
+  console.error(error);
+});

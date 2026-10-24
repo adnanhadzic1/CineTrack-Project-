@@ -23,7 +23,7 @@ M1 frontend + ERD ─► M2 schema + DAOs ─► M3 services + routes + TMDB ─
 
 ## M1 – Setup, static frontend, ERD (this milestone)
 
-Done: folder structure; static SPA with login, register, dashboard, discover, watchlist, reviews, profile and admin screens; responsive layout; mock data; draft ERD; README, AGENTS.md, AI_LOG.md.
+Done: folder structure (including `frontend/views/` HTML templates); static SPA with login, register, dashboard, discover, watchlist, reviews, profile and admin screens, loaded through a template service; responsive layout; mock data; draft ERD (6 entities, `title_genres` junction table); README, AGENTS.md, AI_LOG.md.
 Not done on purpose: any real backend, database, authentication or TMDB call.
 
 ## M2 – Database and DAO layer

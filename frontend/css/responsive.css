@@ -24,7 +24,7 @@
   .menu-btn { display: inline-grid; }
   .topbar { padding: 10px 16px; gap: 10px; }
   .user-chip-text { display: none; }
-  #main { padding: 20px 16px 32px; }
+  .app-main #main { padding: 20px 16px 32px; }
   .app-footer { padding: 16px; }
 
   .auth-layout { grid-template-columns: minmax(0, 1fr); }
@@ -52,7 +52,7 @@
   .search-bar .btn { display: none; }
   .filter-bar { align-items: stretch; flex-direction: column; }
   .segmented { display: grid; grid-template-columns: repeat(3, 1fr); }
-  .segmented[role='group'][aria-label='Filter by status'] { grid-template-columns: repeat(2, 1fr); }
+  .segmented-two-columns { grid-template-columns: repeat(2, 1fr); }
   .inline-field select { flex: 1; }
   .results-bar { flex-direction: column; align-items: flex-start; }
 

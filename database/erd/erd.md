@@ -26,7 +26,7 @@ erDiagram
 
     TITLES {
         INT id PK "AUTO_INCREMENT"
-        INT tmdb_id "NOT NULL, id in TMDB"
+        INT tmdb_id "nullable, id in TMDB; NULL = added by an admin"
         ENUM media_type "movie | tv"
         VARCHAR title "NOT NULL"
         DATE release_date "nullable"
@@ -95,7 +95,7 @@ Five main entities (users, titles, genres, watchlist_items, reviews) plus one ju
 ## Constraints
 
 - **Primary keys:** every table has an `id`; `title_genres` uses the composite key (`title_id`, `genre_id`).
-- **Unique:** `users.email`; `genres.name`; `titles (tmdb_id, media_type)` (TMDB reuses ids across movies and TV, so both columns are needed); `watchlist_items (user_id, title_id)`; `reviews (user_id, title_id)`.
+- **Unique:** `users.email`; `genres.name`; `titles (tmdb_id, media_type)` (TMDB reuses ids across movies and TV, so both columns are needed; `tmdb_id` may be NULL for titles an admin adds by hand, and MySQL allows several NULLs in a unique index, so those rows do not clash); `watchlist_items (user_id, title_id)`; `reviews (user_id, title_id)`.
 - **Checks:** `reviews.rating` between 1 and 5; `watchlist_items.progress_pct` between 0 and 100.
 - **Foreign keys and delete rules** (so nothing is left orphaned):
 
@@ -114,8 +114,10 @@ Five main entities (users, titles, genres, watchlist_items, reviews) plus one ju
 
 | Stored locally in MySQL | Fetched live from TMDB through our backend |
 |-------------------------|---------------------------------------------|
-| `tmdb_id`, `media_type`, `title`, `release_date`, `poster_path` (needed so lists and joins work without an API call) | Overview/description, ratings, runtime, seasons, cast, search results, trending lists |
+| `tmdb_id` (empty for admin-added titles), `media_type`, `title`, `release_date`, `poster_path` (needed so lists and joins work without an API call) | Overview/description, ratings, runtime, seasons, cast, search results, trending lists |
 | Everything about users, watchlists and reviews | |
+
+**Mock data names versus ERD names.** The mock data uses JavaScript camelCase and a few shorter names. The mapping to the planned columns is: `tmdbId` → `tmdb_id`, `mediaType` → `media_type`, `releaseDate` → `release_date`, `posterUrl` → `poster_path`, `progressPct` → `progress_pct`, `progressNote` → `progress_note`, `titleId` → `title_id`, review `text` → `body`, user `active` → `is_active`, `joinedAt` → `created_at`. `genreIds` on a title becomes rows in `title_genres`.
 
 We deliberately do **not** copy TMDB's descriptions and ratings into our database, to avoid stale duplicates. The M1 mock data in `frontend/js/data/mock-data.js` contains overview and rating fields only because there is no TMDB connection yet; they are not part of the planned tables.
 

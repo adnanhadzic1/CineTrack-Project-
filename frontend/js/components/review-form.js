@@ -23,7 +23,7 @@ export function openReviewForm({ titleId = null, reviewId = null, onSaved = () =
   const reviewedIds = new Set(state.reviews.map((r) => r.titleId));
   const choices = state.titles.filter((t) => !reviewedIds.has(t.id));
   if (!existing && !lockedTitle && choices.length === 0) {
-    showToast('You have already reviewed every title in the demo data.', 'info');
+    showToast('You have already reviewed every available title.', 'info');
     return;
   }
 
@@ -59,7 +59,6 @@ export function openReviewForm({ titleId = null, reviewId = null, onSaved = () =
           <p class="field-hint" id="rf-text-count"></p>
           <p class="field-error" id="rf-text-error" hidden></p>
         </div>
-        <p class="mock-note">Demo only: this review is kept in memory until you refresh the page.</p>
         <div class="modal-actions">
           <button type="button" class="btn btn-ghost" data-modal-cancel>Cancel</button>
           <button type="submit" class="btn btn-primary">${existing ? 'Save changes' : 'Save review'}</button>

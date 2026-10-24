@@ -1,0 +1,45 @@
+<!-- Registration screen. Drawn inside the two-panel layout from components/auth-layout.js by register-view.js. -->
+<h1>Create your account</h1>
+<p class="muted">Start tracking what you watch.</p>
+<p class="notice" role="note"><strong>Prototype:</strong> registration does not create a real account yet, and nothing you type is stored.</p>
+
+<form id="register-form" novalidate>
+  <div class="field">
+    <label for="reg-name">Name</label>
+    <input id="reg-name" name="reg-name" type="text" value="" autocomplete="name" placeholder="Your name" maxlength="60"
+           aria-describedby="reg-name-error" aria-invalid="false">
+    <p class="field-error" id="reg-name-error" hidden></p>
+  </div>
+  <div class="field">
+    <label for="reg-email">Email</label>
+    <input id="reg-email" name="reg-email" type="email" value="" autocomplete="email" placeholder="you@example.com"
+           aria-describedby="reg-email-error" aria-invalid="false">
+    <p class="field-error" id="reg-email-error" hidden></p>
+  </div>
+  <div class="field">
+    <label for="reg-password">Password</label>
+    <div class="input-group">
+      <input id="reg-password" name="reg-password" type="password" autocomplete="new-password"
+             aria-describedby="reg-password-error reg-password-hint" aria-invalid="false">
+      <button type="button" class="input-group-btn" data-toggle-password="reg-password" aria-pressed="false" aria-label="Show password">
+        <span data-icon="eye" data-size="18"></span>
+      </button>
+    </div>
+    <p class="field-hint" id="reg-password-hint">At least 8 characters, with a letter and a number.</p>
+    <p class="field-error" id="reg-password-error" hidden></p>
+  </div>
+  <div class="field">
+    <label for="reg-confirm">Confirm password</label>
+    <div class="input-group">
+      <input id="reg-confirm" name="reg-confirm" type="password" autocomplete="new-password"
+             aria-describedby="reg-confirm-error" aria-invalid="false">
+      <button type="button" class="input-group-btn" data-toggle-password="reg-confirm" aria-pressed="false" aria-label="Show password">
+        <span data-icon="eye" data-size="18"></span>
+      </button>
+    </div>
+    <p class="field-error" id="reg-confirm-error" hidden></p>
+  </div>
+  <button type="submit" class="btn btn-primary btn-block">Create account</button>
+</form>
+
+<p class="auth-switch">Already have an account? <a href="#/login">Log in</a></p>

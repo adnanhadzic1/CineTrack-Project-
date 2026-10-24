@@ -34,14 +34,13 @@ function detailHtml(title) {
       <div class="detail-poster">${posterHtml(title)}</div>
       <div class="detail-info">
         <p class="detail-meta">${typeLabel(title.mediaType)} · ${releaseYear(title)} · ${lengthText(title)}</p>
-        <p class="detail-rating">${ratingPill(title.rating)} <span class="muted">mock community rating</span></p>
+        <p class="detail-rating">${ratingPill(title.rating)} <span class="muted">rating</span></p>
         <ul class="chip-list" aria-label="Genres">${genreNamesOf(title).map((g) => `<li>${esc(g)}</li>`).join('')}</ul>
         <p class="detail-overview">${esc(title.overview)}</p>
         <div class="detail-actions">
           ${watchControls}
           <button type="button" class="btn btn-secondary" data-review-title="${title.id}">${icon('edit', 16)} ${review ? 'Edit your review' : 'Write a review'}</button>
         </div>
-        <p class="mock-note">Mock data. Real descriptions, posters and ratings will come from TMDB through our backend in a later milestone.</p>
       </div>
     </div>`;
 }

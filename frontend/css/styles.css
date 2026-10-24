@@ -11,7 +11,8 @@
   --surface-3: #223152;
   --border: #2a3a5c;
   --text: #e9eef8;
-  --muted: #a3b0c9;        /* 7.9:1 on --bg, 6.9:1 on --surface */
+  --muted: #a3b0c9;        /* 8.6:1 on --bg, 7.9:1 on --surface, 6.9:1 on --surface-2 */
+  --control-border: #60759b; /* form-field edges and empty stars: 4.0:1 on --bg, 3.7:1 on --surface (3:1 is the minimum) */
   --accent: #f2a93b;
   --accent-strong: #ffbf5e;
   --accent-ink: #1b1204;   /* text on accent buttons */
@@ -100,7 +101,7 @@ code { background: var(--surface-2); padding: 0.1em 0.4em; border-radius: 4px; f
 .field label, .field legend { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.925rem; padding: 0; }
 input[type='text'], input[type='email'], input[type='password'], input[type='search'], input[type='date'], select, textarea {
   width: 100%; min-height: 44px; padding: 10px 12px; font: inherit; color: var(--text);
-  background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--bg); border: 1px solid var(--control-border); border-radius: var(--radius-sm);
 }
 textarea { resize: vertical; min-height: 96px; }
 input::placeholder, textarea::placeholder { color: #7886a3; }
@@ -115,7 +116,7 @@ input[aria-invalid='true'], select[aria-invalid='true'], textarea[aria-invalid='
 .input-group input { border-top-right-radius: 0; border-bottom-right-radius: 0; }
 .input-group-btn {
   width: 48px; display: grid; place-items: center; background: var(--surface-2); color: var(--text);
-  border: 1px solid var(--border); border-left: 0; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; cursor: pointer;
+  border: 1px solid var(--control-border); border-left: 0; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; cursor: pointer;
 }
 .input-group-btn:hover { background: var(--surface-3); }
 .form-actions { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -135,7 +136,7 @@ input[aria-invalid='true'], select[aria-invalid='true'], textarea[aria-invalid='
 /* Star input (radio buttons shown as stars; DOM order is 5..1 and flex-direction reverses it) */
 .star-input { display: inline-flex; flex-direction: row-reverse; gap: 2px; }
 .star-input input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.star-input label { margin: 0; padding: 0 2px; font-size: 2rem; line-height: 1; color: var(--surface-3); cursor: pointer; transition: color 0.1s; }
+.star-input label { margin: 0; padding: 0 2px; font-size: 2rem; line-height: 1; color: var(--control-border); cursor: pointer; transition: color 0.1s; }
 .star-input input:checked ~ label, .star-input label:hover, .star-input label:hover ~ label { color: var(--accent); }
 .star-input input:focus-visible + label { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
 
@@ -197,7 +198,8 @@ input[aria-invalid='true'], select[aria-invalid='true'], textarea[aria-invalid='
 .avatar { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--surface-3); color: var(--accent-strong); font-weight: 800; font-size: 0.9rem; }
 .avatar-lg { width: 84px; height: 84px; font-size: 1.8rem; margin-bottom: 12px; }
 
-#main { flex: 1; padding: 28px 32px 40px; width: 100%; max-width: 1240px; margin: 0 auto; }
+/* Only the page area next to the sidebar. The login/register screens also use <main id="main">, and they must fill the whole window. */
+.app-main #main { flex: 1; padding: 28px 32px 40px; width: 100%; max-width: 1240px; margin: 0 auto; }
 .app-footer { padding: 18px 32px 28px; border-top: 1px solid var(--border); font-size: 0.82rem; color: var(--muted); max-width: 1240px; width: 100%; margin: 0 auto; }
 
 /* ---------- Page structure ---------- */
@@ -247,7 +249,11 @@ input[aria-invalid='true'], select[aria-invalid='true'], textarea[aria-invalid='
 .poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .poster-title { position: relative; font-weight: 800; font-size: 0.95rem; line-height: 1.15; color: #fff; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6); }
 .continue-poster .poster, .wl-poster .poster, .review-poster .poster { padding: 6px; border-radius: 6px; }
-.continue-poster .poster-title, .wl-poster .poster-title, .review-poster .poster-title { font-size: 0.62rem; }
+/* Small thumbnails sit right next to the title as a heading, and the text would be unreadably small, so it is left out there. */
+.continue-poster .poster-title, .wl-poster .poster-title, .review-poster .poster-title { display: none; }
+/* When a title has a real poster image, the image already shows the title: hide the placeholder text on top of it.
+   If the image fails to load, app.js removes the <img>, this rule stops matching and the text comes back. */
+.poster img + .poster-title { display: none; }
 
 .title-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: 20px; }
 .title-card { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
@@ -345,9 +351,6 @@ input[aria-invalid='true'], select[aria-invalid='true'], textarea[aria-invalid='
 input[type='checkbox'] { width: 18px; height: 18px; accent-color: var(--accent); }
 
 /* ---------- Admin ---------- */
-.disclosure { margin-bottom: 20px; padding: 12px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); }
-.disclosure summary { cursor: pointer; font-weight: 700; }
-.disclosure ul { display: grid; gap: 8px; margin-top: 12px; padding-left: 18px; list-style: disc; color: var(--muted); font-size: 0.9rem; }
 .admin-tiles { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
 .admin-tile { display: flex; align-items: baseline; gap: 8px; padding: 8px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); }
 .admin-tile-value { font-size: 1.3rem; font-weight: 800; color: var(--accent-strong); }
@@ -404,3 +407,6 @@ input[type='checkbox'] { width: 18px; height: 18px; accent-color: var(--accent);
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
+
+/* Wrapper used by the HTML templates for a spot the view fills with markup; it must not affect layout. */
+.slot { display: contents; }

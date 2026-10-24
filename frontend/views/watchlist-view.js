@@ -1,48 +1,39 @@
 /** Watchlist: filter by status and type, change status, write a review, remove. Demo state only. */
-import { esc, mountPage, formatDate, typeLabel } from '../utils/dom.js';
-import { icon } from '../components/icons.js';
-import { emptyState } from '../components/feedback.js';
-import { posterHtml, typeChip } from '../components/movie-card.js';
-import { confirmDialog } from '../components/modal.js';
-import { openTitleDetails } from '../components/title-modal.js';
-import { openReviewForm } from '../components/review-form.js';
-import { demoToast } from '../components/toast.js';
+import { esc, mountPage, formatDate, typeLabel } from '../js/utils/dom.js';
+import { icon } from '../js/components/icons.js';
+import { emptyState } from '../js/components/feedback.js';
+import { posterHtml, typeChip } from '../js/components/movie-card.js';
+import { confirmDialog } from '../js/components/modal.js';
+import { openTitleDetails } from '../js/components/title-modal.js';
+import { openReviewForm } from '../js/components/review-form.js';
+import { demoToast } from '../js/components/toast.js';
+import { renderTemplate } from '../js/services/template-service.js';
 import {
   STATUSES, state, getTitle, genreNamesOf, releaseYear, statusLabel, watchlistStats, setWatchStatus, removeFromWatchlist,
-} from '../state.js';
+  progressSummary,
+} from '../js/state.js';
 
 export function renderWatchlistView(container, route) {
   const page = mountPage(container);
   const requested = route.query.get('status');
   const view = { status: STATUSES.some((s) => s.value === requested) ? requested : 'all', type: 'all' };
 
-  page.innerHTML = `
-    <header class="page-head">
-      <div>
-        <h1 class="page-title">Your watchlist</h1>
-        <p class="muted">Everything you plan to watch, are watching or have finished.</p>
-      </div>
-      <a class="btn btn-primary" href="#/discover">${icon('plus', 18)} Add titles</a>
-    </header>
-    <p class="notice" role="note"><strong>Demo state.</strong> Changes here are kept in memory only and reset when you refresh the page. Saving to a database arrives in later milestones.</p>
-
-    <div class="filter-bar">
-      <div class="segmented" id="wl-status" role="group" aria-label="Filter by status"></div>
-      <div class="inline-field">
-        <label for="wl-type">Type</label>
-        <select id="wl-type">
-          <option value="all">All types</option>
-          <option value="movie">Movies</option>
-          <option value="tv">TV shows</option>
-        </select>
-      </div>
-    </div>
-    <p id="wl-count" class="results-count" aria-live="polite"></p>
-    <div id="wl-results"></div>`;
+  renderTemplate(page, 'watchlist'); // static layout lives in views/watchlist.html
 
   const statusBar = page.querySelector('#wl-status');
   const results = page.querySelector('#wl-results');
   const count = page.querySelector('#wl-count');
+
+  // Progress bar for a title being watched. With no progress logged yet, show plain text instead of an empty bar.
+  function progressHtml(item, title) {
+    const summary = progressSummary(item);
+    if (!summary) return '<p class="wl-dates muted">No progress logged yet</p>';
+    return `
+      <div class="wl-progress">
+        <div class="progress" role="progressbar" aria-label="Progress for ${esc(title.title)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${item.progressPct}"><span style="width:${item.progressPct}%"></span></div>
+        <span class="muted">${esc(summary)}</span>
+      </div>`;
+  }
 
   function rowHtml(item) {
     const title = getTitle(item.titleId);
@@ -52,11 +43,7 @@ export function renderWatchlistView(container, route) {
         <div class="wl-main">
           <h3 class="wl-title"><button type="button" class="link-btn" data-open-title="${title.id}">${esc(title.title)}</button></h3>
           <p class="wl-meta">${typeChip(title.mediaType)} <span>${releaseYear(title)}</span> <span class="muted">${esc(genreNamesOf(title).join(', '))}</span></p>
-          ${item.status === 'watching' ? `
-            <div class="wl-progress">
-              <div class="progress" role="progressbar" aria-label="Progress for ${esc(title.title)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${item.progressPct}"><span style="width:${item.progressPct}%"></span></div>
-              <span class="muted">${esc(item.progressNote || `${item.progressPct}% watched`)}</span>
-            </div>` : ''}
+          ${item.status === 'watching' ? progressHtml(item, title) : ''}
           <p class="wl-dates muted">Added ${formatDate(item.addedAt)} · Updated ${formatDate(item.updatedAt)}</p>
         </div>
         <div class="wl-controls">

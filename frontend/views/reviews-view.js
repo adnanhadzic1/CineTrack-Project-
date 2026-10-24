@@ -1,13 +1,14 @@
 /** Reviews: the demo user's reviews, with create / edit / delete. Demo state only. */
-import { esc, mountPage, formatDate, typeLabel } from '../utils/dom.js';
-import { icon } from '../components/icons.js';
-import { emptyState } from '../components/feedback.js';
-import { posterHtml, starsHtml } from '../components/movie-card.js';
-import { confirmDialog } from '../components/modal.js';
-import { openReviewForm } from '../components/review-form.js';
-import { openTitleDetails } from '../components/title-modal.js';
-import { demoToast } from '../components/toast.js';
-import { state, getTitle, releaseYear, deleteReview } from '../state.js';
+import { esc, mountPage, formatDate, typeLabel } from '../js/utils/dom.js';
+import { icon } from '../js/components/icons.js';
+import { emptyState } from '../js/components/feedback.js';
+import { posterHtml, starsHtml } from '../js/components/movie-card.js';
+import { confirmDialog } from '../js/components/modal.js';
+import { openReviewForm } from '../js/components/review-form.js';
+import { openTitleDetails } from '../js/components/title-modal.js';
+import { demoToast } from '../js/components/toast.js';
+import { renderTemplate, bindText, bindHtml } from '../js/services/template-service.js';
+import { state, getTitle, releaseYear, deleteReview } from '../js/state.js';
 
 export function renderReviewsView(container) {
   const page = mountPage(container);
@@ -37,25 +38,22 @@ export function renderReviewsView(container) {
     const reviews = [...state.reviews].sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id - a.id);
     const average = reviews.length ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1) : null;
 
-    page.innerHTML = `
-      <header class="page-head">
-        <div>
-          <h1 class="page-title">Your reviews</h1>
-          <p class="muted">${reviews.length
-            ? `${reviews.length} review${reviews.length === 1 ? '' : 's'} · your average rating is ${average} out of 5`
-            : 'Rate what you have watched and keep a few notes for later.'}</p>
-        </div>
-        <button type="button" class="btn btn-primary" data-new-review>${icon('plus', 18)} Write a review</button>
-      </header>
-      <p class="notice" role="note"><strong>Demo reviews.</strong> These are placeholder reviews kept in memory only. You can review each title once, and later you can edit or delete your review.</p>
-      ${reviews.length
+    renderTemplate(page, 'reviews'); // static layout lives in views/reviews.html
+    bindText(page, {
+      subtitle: reviews.length
+        ? `${reviews.length} review${reviews.length === 1 ? '' : 's'} · your average rating is ${average} out of 5`
+        : 'Rate what you have watched and keep a few notes for later.',
+    });
+    bindHtml(page, {
+      list: reviews.length
         ? `<ul class="review-list">${reviews.map(reviewHtml).join('')}</ul>`
         : emptyState({
             iconName: 'star',
             title: 'No reviews yet',
             text: 'Write your first review to remember what you thought of a title.',
             actionHtml: '<button type="button" class="btn btn-primary" data-new-review>Write a review</button>',
-          })}`;
+          }),
+    });
   }
 
   page.addEventListener('click', async (event) => {

@@ -58,6 +58,13 @@ export function watchlistStats() {
   };
 }
 
+/** Text for a "watching" title, or '' when no progress has been logged yet. */
+export function progressSummary(item) {
+  if (item.progressNote) return item.progressNote;
+  if (item.progressPct > 0) return `${item.progressPct}% watched`;
+  return '';
+}
+
 // ---- watchlist actions ----
 export function addToWatchlist(titleId, status = 'planned') {
   if (getWatchItemByTitle(titleId)) return null; // one row per user + title (unique constraint in the planned DB)
@@ -74,9 +81,18 @@ export function addToWatchlist(titleId, status = 'planned') {
 export function setWatchStatus(itemId, status) {
   const item = state.watchlist.find((w) => w.id === Number(itemId));
   if (!item) return null;
+  const previousStatus = item.status;
   item.status = status;
-  if (status === 'completed') item.progressPct = 100;
-  if (status === 'planned') { item.progressPct = 0; item.progressNote = ''; }
+  if (status === 'completed') {
+    item.progressPct = 100;
+  } else if (status === 'planned') {
+    item.progressPct = 0;
+    item.progressNote = '';
+  } else if (status === 'watching' && previousStatus === 'completed') {
+    // A finished title that is watched again starts from the beginning.
+    item.progressPct = 0;
+    item.progressNote = '';
+  }
   item.updatedAt = today();
   notify();
   return item;
@@ -137,7 +153,7 @@ export function adminSaveTitle({ id, title, mediaType, releaseDate }) {
   const created = {
     id: nextId(state.titles), tmdbId: null, mediaType, title, releaseDate, rating: 0, popularity: 0,
     runtimeMinutes: null, seasons: null, genreIds: [], hue: Math.floor(Math.random() * 360), posterUrl: null,
-    overview: 'Added from the admin prototype. Real descriptions will come from TMDB.',
+    overview: 'No description yet.',
   };
   state.titles.push(created);
   notify();
