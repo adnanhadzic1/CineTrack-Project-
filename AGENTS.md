@@ -6,7 +6,7 @@ Read this file before changing anything. Update it whenever the architecture cha
 
 CineTrack is a movie and TV-series tracking single-page app, built individually for the university course **IT 2001 Web Programming**. The student must be able to explain every line during a defense **without AI tools**, so prefer simple, readable code over clever code.
 
-Current milestone: **M1** (static frontend, ERD, docs). Later milestones are planned in `docs/PLAN.md`. **Only implement the milestone you were asked to implement.**
+Current milestone: **M2** (MySQL schema, PDO configuration and DAO layer; M1 delivered the static frontend, ERD and docs). Later milestones are planned in `docs/PLAN.md`. **Only implement the milestone you were asked to implement.**
 
 ## Mandatory technology stack (do not change silently)
 
@@ -31,14 +31,16 @@ view → frontend service → fetch → FlightPHP route → middleware → servi
 - **Routes** (`backend/routes/`): parse the request, call a service, return JSON with the right status code. No SQL, no business rules.
 - **Middleware** (`backend/middleware/`): authentication (401), role authorization (403), request logging, error handling. Reusable and registered in FlightPHP, never copied into routes.
 - **Services** (`backend/services/`): business rules and validation. The **only** layer that calls DAOs. The TMDB client lives here too.
-- **DAOs** (`backend/dao/`): database access only, through a `BaseDao`. Prepared statements always.
+- **DAOs** (`backend/dao/`): database access only. `BaseDao` provides `run`, `fetchOne`, `fetchAll` and the generic `findAll`, `findById`, `create`, `update`, `delete`; each `<Entity>Dao` extends it, sets `$table` and the `$columns` it may write, and adds specific finders. All values go through `?` placeholders; column names come from `$columns`, never from the caller. `UserDao` never returns `password_hash` except `findByEmailWithPasswordHash()` (login only). A DAO method that changes several rows uses a transaction (`TitleGenreDao::replaceForTitle`). DAOs do not know about HTTP and are called only by services.
+- **Database connection**: `backend/config/Database.php` builds one PDO connection from `backend/config/config.php` (git-ignored; copy `config.example.php`). PDO uses exception mode, real prepared statements and utf8mb4. A failed connection is logged server-side and reported with a generic message.
+- **Database file**: `database/cinetrack.sql` is the schema plus fictional sample data and must stay in sync with `database/erd/erd.md`. Table names are plural `snake_case`; foreign keys are `<singular>_id`; constraint names use the prefixes `uq_`, `idx_`, `fk_`, `chk_`.
 - **Frontend services** (`frontend/js/services/`): the **only** frontend files that call `fetch`. `api-service.js` is for the backend (from M4). `template-service.js` loads the static HTML templates from `frontend/views/` and fills them with data; it never talks to the backend. Views and components must not call `fetch`.
 - **Views**: `frontend/views/<screen>.html` holds the page layout (course requirement "views (HTML templates)"). `frontend/views/<screen>-view.js` draws the template, fills `data-bind` / `data-slot` spots (escape anything placed in a slot with `esc()`) and attaches listeners. Every template must be used by a view.
 - Admin permissions do not include reading other users' private watchlists. Watchlist and review queries are always filtered by the user id from the verified JWT, never by a client-supplied user id.
 
 ## Folder structure
 
-See the tree in `README.md`. Backend folders (`routes`, `services`, `dao`, `middleware`, `config`, `logs`, `public`) exist from M1 but are empty of code until M2–M4. `database/erd/erd.md` is the ERD; `docs/` holds `PLAN.md` and `AI_LOG.md`.
+See the tree in `README.md`. Backend folders (`routes`, `services`, `dao`, `middleware`, `config`, `logs`, `public`) exist from M1. `dao/`, `config/` and `tests/` contain code since M2; `routes`, `services`, `middleware` and `public` stay empty until M3 and M4. `database/erd/erd.md` is the ERD; `docs/` holds `PLAN.md` and `AI_LOG.md`.
 
 ## Naming conventions
 
@@ -78,7 +80,7 @@ See the tree in `README.md`. Backend folders (`routes`, `services`, `dao`, `midd
 
 - One branch per milestone: `milestone1` … `milestone5`. Commit that milestone's work only on its branch.
 - Before the deadline: open a pull request and add the GitHub user `ibu-web-programming2001` as collaborator **and** reviewer (the collaborator invite must be sent well before the deadline; weekend-before requests are not accepted).
-- **Never merge a milestone branch into `main`.** The reviewer merges. Start the next milestone branch only after the previous one is merged.
+- **Never merge a milestone branch into `main`.** The reviewer merges. Normally start the next milestone branch after the previous one is merged. Exception, decided by the student: `milestone2` was created from `origin/milestone1` while the M1 pull request was still open; never rewrite or merge the M1 branch because of that.
 - Use meaningful commit messages. Review the staged files before every commit. Never force-push or rewrite history.
 - `AGENTS.md` and `docs/AI_LOG.md` must be updated in every milestone (−0.25 points otherwise).
 - Submitting the topic and repository link through the LMS form is a manual step for the student.
@@ -86,6 +88,7 @@ See the tree in `README.md`. Backend folders (`routes`, `services`, `dao`, `midd
 ## Testing expectations
 
 - Run `node --check` on changed JS files and exercise the app in a real browser (console must stay clean) before declaring work done.
+- For DAO work: import `database/cinetrack.sql` into a fresh database and run `php backend/tests/dao_test.php`. Add checks there when a DAO changes.
 - For backend work: test each endpoint, including the 400, 401, 403, 404 and 500 paths.
 - Report only checks that were actually run, and say what was not verified.
 

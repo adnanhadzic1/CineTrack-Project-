@@ -1,6 +1,6 @@
-# CineTrack – Draft ERD (Milestone 1)
+# CineTrack – ERD (drafted in Milestone 1, implemented in Milestone 2)
 
-> **Planning artifact.** This is a design draft, not a finished database. The real MySQL schema, SQL export and sample data are delivered in Milestone 2, and the schema may be refined then.
+> The schema below is implemented in [`database/cinetrack.sql`](../cinetrack.sql) (Milestone 2). The diagram and the SQL agree; the implementation only adds MySQL details that a diagram does not show: all `id` and foreign-key columns are `INT UNSIGNED`, `is_active` is `TINYINT(1)`, the string lengths are `users.name` 60, `users.email` 255, `titles.title` 200, `titles.poster_path` 255, `genres.name` 40, `progress_note` 100, and the constraint and index names (`uq_…`, `idx_…`, `fk_…`, `chk_…`). No entity or relationship was changed in M2.
 
 ## Diagram
 
@@ -134,4 +134,4 @@ We deliberately do **not** copy TMDB's descriptions and ratings into our databas
 
 **Privacy decision:** administrators manage shared catalogue data (titles, genres), users' roles/active flag and review moderation. They do **not** get access to other users' private watchlists, and nobody can read password hashes through the API. Every watchlist and review query is filtered by the `user_id` taken from the verified JWT, never from a request parameter.
 
-Items still to confirm in M2: whether a role table is worth it (the `ENUM` is simpler and enough for two roles), and whether users should be able to read other users' reviews of a title (not required by M1).
+Decisions taken in M2: roles stay an `ENUM('user','admin')` (a role table is not worth it for two roles); whether users may read other users' reviews of a title is a service-layer rule for M3, so `ReviewDao::findByTitleId()` exists but nothing exposes it yet.

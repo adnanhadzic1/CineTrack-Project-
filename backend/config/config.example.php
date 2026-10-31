@@ -1,8 +1,8 @@
 <?php
 /**
- * CineTrack configuration TEMPLATE  (planning artifact for M1 - nothing reads this file yet).
+ * CineTrack configuration TEMPLATE  (used by backend/config/Database.php since M2).
  *
- * How it will be used (from M2 onwards):
+ * How to use it:
  *   1. Copy this file to backend/config/config.php
  *   2. Replace every placeholder value with your real value
  *   3. NEVER commit config.php - it is listed in .gitignore

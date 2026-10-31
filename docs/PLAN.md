@@ -28,11 +28,13 @@ Not done on purpose: any real backend, database, authentication or TMDB call.
 
 ## M2 – Database and DAO layer
 
-- Create `database/schema.sql` from the ERD, plus sample data and a SQL export.
-- `backend/config/config.php` (git-ignored) holds DB credentials; `config.example.php` is committed.
-- `composer install` for FlightPHP (needs network access to Packagist) and a PDO connection class.
-- `BaseDao` with generic CRUD using prepared statements; one DAO per entity (users, titles, genres, title_genres, watchlist_items, reviews).
-- Verify the DAOs with a small script or PHPUnit-style checks against the sample data.
+Status: implemented on branch `milestone2` (started from the M1 branch `milestone1`, because the M1 pull request had not been merged yet).
+
+- `database/cinetrack.sql`: schema from the ERD (6 tables, InnoDB, foreign keys with `ON DELETE CASCADE`, unique constraints, CHECK constraints, indexes) plus fictional sample data. It can be imported repeatedly.
+- `backend/config/config.example.php` is committed; `config.php` with real credentials is git-ignored. `backend/config/Database.php` creates the shared PDO connection.
+- `BaseDao` with generic CRUD using prepared statements, and one DAO per entity (users, titles, genres, title_genres, watchlist_items, reviews).
+- `backend/tests/dao_test.php`: plain PHP check (schema, CRUD for every DAO, foreign keys, duplicates, special characters, cascades, connection errors).
+- Decided to skip Composer for M2: the DAO files load each other with `require_once`. FlightPHP is installed and its version verified in M3.
 
 ## M3 – Services, REST routes, OpenAPI, TMDB
 

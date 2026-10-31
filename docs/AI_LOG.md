@@ -129,3 +129,73 @@ Claude re-read `Project Requirements Milestones and Deadlines.docx` (Milestone 1
 ### Submission status of this log
 
 Complete from the evidence available: tools, prompts, outputs, checks, nine cases (seven found by Claude, two noticed by the student and corrected by Claude), limitations. Not claimed: any bug found by the student by reading code, a student code review, or tests run by the student other than the manual run they reported.
+
+---
+
+## Milestone 2 – Database and DAO layer
+
+### AI tool and purpose
+
+- **Tool:** Claude (Claude Code, model Claude Sonnet 5.5) again. No other AI tool is recorded.
+- **Used for:** the MySQL schema and sample data, the PDO connection class, `BaseDao` and six DAO classes, a plain PHP test script, and the documentation updates.
+
+### Main prompts and tasks
+
+1. A long M2 prompt listing the official requirements (database, at least five entities, SQL export with sample data, DAO layer with a reusable base class, PDO, prepared statements, credentials in a git-ignored config file), the architecture limits (no routes, services, JWT, TMDB or frontend integration), the tests to run and the documentation to update. It also required that the work should start only after M1 was merged.
+2. A change of decision by the student: do **not** wait for the M1 pull request. Connect to the student's GitHub repository, check that `origin/milestone1` contains the complete M1, and create `milestone2` from it. Keep the code simple enough for a beginner to explain, do not merge pull requests, do not force-push.
+
+### Git starting point
+
+The repository `https://github.com/adnanhadzic1/CineTrack-Project-` was cloned read-only. `origin/main` was at `4d3e30a` ("Initial commit") and `origin/milestone1` at `23bb3d5` ("Merge remote main history into milestone1"). Its files were compared with the finished M1 working tree from the earlier sessions: the only difference was one README line (the repository URL). `milestone2` was created from `origin/milestone1` (`23bb3d5`). The M1 branch and its pull request were not touched. Claude had no GitHub login in its environment, so it could not push; see the final report of the session for what the student has to do.
+
+### What the AI produced
+
+| Area | Files |
+|------|-------|
+| Database | `database/cinetrack.sql` (6 tables, keys, constraints, indexes, fictional sample data taken from the frontend mock data) |
+| PDO connection | `backend/config/Database.php`, `backend/config/config.example.php` (placeholders only) |
+| DAO layer | `backend/dao/BaseDao.php`, `UserDao.php`, `TitleDao.php`, `GenreDao.php`, `TitleGenreDao.php`, `WatchlistItemDao.php`, `ReviewDao.php` |
+| Test | `backend/tests/dao_test.php` |
+| Docs | `README.md`, `AGENTS.md`, `docs/PLAN.md`, `database/erd/erd.md`, `backend/README.md`, `backend/dao/README.md`, this file |
+
+The only change to the ERD is a note that lists MySQL details (unsigned ids, string lengths, constraint names); no entity or relationship was changed. Sample data was generated from `frontend/js/data/mock-data.js` by a throw-away script (not in the repository); the five sample users got bcrypt hashes of one local demo password that is written in the SQL header.
+
+### How the results were reviewed and tested
+
+Performed by Claude in its sandbox, not by the student:
+
+- `php -l` on every PHP file (no syntax errors).
+- A real database: MariaDB 10.11 was installed in the sandbox (MySQL itself was not available). `database/cinetrack.sql` was imported into a fresh database and imported a second time (re-import works).
+- `php backend/tests/dao_test.php` against that database: **87 checks passed, 0 failed**, run twice (once on the first import, once after dropping the database and importing again). The script checks: the six tables and InnoDB; six foreign keys, all `ON DELETE CASCADE`; five unique indexes; sample data counts; bcrypt hashes; create, read by id, read by filter or relationship, update and delete for every DAO; rejected duplicates (e-mail, genre name, TMDB id with media type, watchlist entry, review, genre twice on a title); rejected invalid foreign keys, ENUM values and CHECK values (rating, progress); several titles without `tmdb_id` allowed; quotes, `%`, backslashes, Unicode and an SQL-injection-like text stored as plain text; unknown or injected column names rejected; no `password_hash` in normal user reads; cascade deletes for genre, title and user; the transaction in `replaceForTitle` rolls back on an error; test rows removed at the end; a failed login to the database gives a generic message without the password, user name or host.
+- **Not verified:** MySQL 8 itself (only MariaDB 10.11), MySQL versions older than 8.0.16, Windows, and PHP versions other than 8.3.6.
+- **Not part of M2 and therefore not done:** anything outside the DAO layer (no routes, services, authentication, TMDB or frontend connection). The M1 frontend tests were not re-run for M2 because no frontend file was changed.
+
+**Student review (to be done by the student):** run the three commands in the README on your own MySQL, read `BaseDao.php` and one DAO until you can explain `run()`, `$columns` and why values are passed as `?` parameters, and be able to explain why `TitleGenreDao` overrides three inherited methods. These steps are not recorded as done.
+
+### Cases where the AI made a mistake or produced poor code
+
+All three cases below really happened during this milestone. They were found by Claude itself while running its own test script or reviewing its own code; the student did not find them.
+
+**Case J – the first test script clashed with the DAO's own transaction (found by running the test)**
+1. *Requested:* tests that leave the sample data unchanged.
+2. *What the AI did:* it wrapped the whole test script in one outer transaction that is rolled back at the end, and also wrote `TitleGenreDao::replaceForTitle()` with its own `beginTransaction()`.
+3. *How it was detected:* the first run stopped with `PDOException: There is already an active transaction` at the first call of `replaceForTitle()`.
+4. *Fix:* the outer transaction was dropped. The script now removes the rows it created (several are removed by the cascade checks, the rest explicitly) and finishes with a check that the sample data counts are back to 5 users, 14 titles, 12 genres, 12 watchlist items, 6 reviews and 25 genre links. The DAO stayed simple, and the test of the rollback in `replaceForTitle` became a real test of that transaction.
+5. *Checked by:* rerunning the script (87 passed).
+
+**Case K – a wrong expectation in the test about PDO attributes (found by running the test)**
+1. *What was wrong:* a check wrote `getAttribute(PDO::ATTR_EMULATE_PREPARES) === false`, but PDO returns the integer `0`, so the check failed although the connection was configured correctly.
+2. *How it was detected:* 86 of 87 checks passed; the failing one was investigated by printing the real values (`int(0)` and `int(2)`).
+3. *Fix:* the test now compares `(int) ... === 0`. The connection code was not changed, and the check was not removed or weakened: it still fails if emulated prepares were turned on.
+
+**Case L – the junction table inherited methods that cannot work (found in self-review, then covered by a test)**
+1. *What was wrong:* `TitleGenreDao` extends `BaseDao`, whose `findAll()`, `findById()`, `update()` and `delete()` assume a single `id` column. `title_genres` has none (its key is `title_id` plus `genre_id`), so the inherited `findAll()` would have produced a SQL error and the other three would have been misleading.
+2. *How it was detected:* while re-reading the class before running the tests.
+3. *Fix:* `findAll()` was overridden with an explicit `ORDER BY title_id, genre_id`; `findById`, `update` and `delete` now throw a `LogicException` that names the right method (`findByTitleId`, `replaceForTitle`, `remove`). Tests cover both.
+
+### Limitations of this AI-assisted work to be aware of
+
+- Tests ran on MariaDB 10.11 only, not on MySQL.
+- Claude could not push to GitHub (no login in its environment), so branch `milestone2` exists only in the working copy it used, until the student pushes it.
+- The DAOs are generic and trust their caller: validation and business rules belong in the M3 services.
+- FlightPHP is still not installed and its version in `composer.json` is still unverified.
