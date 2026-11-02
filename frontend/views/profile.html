@@ -1,0 +1,67 @@
+<!-- Profile page skeleton. profile-view.js fills the summary texts and the current values of the form. -->
+<header class="page-head">
+  <div>
+    <h1 class="page-title">Profile</h1>
+    <p class="muted">Your account details and preferences.</p>
+  </div>
+</header>
+
+<div class="profile-grid">
+  <section class="panel profile-summary" aria-labelledby="summary-title">
+    <span class="avatar avatar-lg" aria-hidden="true" data-bind="initials"></span>
+    <h2 id="summary-title" data-bind="name"></h2>
+    <p class="muted" data-bind="email"></p>
+    <p class="profile-bio" data-bind="bio"></p>
+    <dl class="profile-facts">
+      <div><dt>Role</dt><dd data-bind="role"></dd></div>
+      <div><dt>Member since</dt><dd data-bind="memberSince"></dd></div>
+      <div><dt>Watchlist</dt><dd data-bind="watchlistCount"></dd></div>
+      <div><dt>Completed</dt><dd data-bind="completedCount"></dd></div>
+      <div><dt>Reviews</dt><dd data-bind="reviewCount"></dd></div>
+    </dl>
+  </section>
+
+  <div class="profile-forms">
+    <section class="panel" aria-labelledby="edit-title">
+      <h2 id="edit-title" class="panel-title">Edit profile</h2>
+      <form id="profile-form" novalidate>
+        <div class="field">
+          <label for="pf-name">Name</label>
+          <input id="pf-name" name="pf-name" type="text" value="" autocomplete="name" maxlength="60"
+                 aria-describedby="pf-name-error" aria-invalid="false">
+          <p class="field-error" id="pf-name-error" hidden></p>
+        </div>
+        <div class="field">
+          <label for="pf-email">Email</label>
+          <input id="pf-email" name="pf-email" type="email" value="" autocomplete="email"
+                 aria-describedby="pf-email-error" aria-invalid="false">
+          <p class="field-error" id="pf-email-error" hidden></p>
+        </div>
+        <div class="field">
+          <label for="pf-bio">Bio <span class="muted">(optional)</span></label>
+          <textarea id="pf-bio" rows="3" aria-describedby="pf-bio-count pf-bio-error" aria-invalid="false"></textarea>
+          <p class="field-hint" id="pf-bio-count"></p>
+          <p class="field-error" id="pf-bio-error" hidden></p>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Save changes</button>
+          <button type="button" class="btn btn-ghost" id="pf-reset">Reset</button>
+        </div>
+        <p class="field-hint">Changes apply to this visit only and are not saved.</p>
+      </form>
+    </section>
+
+    <section class="panel" aria-labelledby="prefs-title">
+      <h2 id="prefs-title" class="panel-title">Account preferences</h2>
+      <p class="muted">These options are not available yet.</p>
+      <ul class="pref-list">
+        <li><label><input type="checkbox" disabled> Hide spoilers in reviews</label></li>
+        <li><label><input type="checkbox" disabled> Show ratings on poster cards</label></li>
+        <li><label for="pref-view">Default watchlist view</label>
+          <select id="pref-view" disabled><option>List</option></select></li>
+      </ul>
+      <button type="button" class="btn btn-secondary" disabled>Change password</button>
+      <p class="field-hint">Password changes are not available in the prototype.</p>
+    </section>
+  </div>
+</div>
