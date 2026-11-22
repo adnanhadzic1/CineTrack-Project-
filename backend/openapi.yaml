@@ -1,0 +1,871 @@
+openapi: 3.0.3
+info:
+  title: CineTrack API
+  version: 1.0.0
+  description: |
+    REST API of CineTrack, a movie and TV tracker (IBU IT 2001 Web Programming, Milestone 3).
+
+    Every answer is JSON. Success: `{"success": true, "data": ..., "message": "..."}`.
+    Error: `{"success": false, "message": "...", "errors": {"field": "what is wrong"}}`.
+
+    **Authentication is not part of Milestone 3.** No endpoint needs a login yet, so the status codes
+    401 and 403 are never returned; JWT login and role checks are added in Milestone 4.
+
+    The `/external/...` endpoints fetch data from TMDB (The Movie Database) through the backend.
+    They need a TMDB access token in `backend/config/config.php`; without one they answer 503.
+    This product uses the TMDB API but is not endorsed or certified by TMDB.
+servers:
+  - url: http://localhost:8001
+    description: Local development server (php -S localhost:8001 -t backend/public)
+tags:
+  - name: Users
+  - name: Titles
+  - name: Genres
+  - name: Title genres
+    description: Link table between titles and genres. A link has no id; it is the pair (titleId, genreId).
+  - name: Watchlist items
+  - name: Reviews
+  - name: External API (TMDB)
+paths:
+  /users:
+    get:
+      tags: [Users]
+      summary: List all users
+      description: Password hashes are never returned.
+      responses:
+        '200':
+          description: All users
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserListResponse' }
+        '500': { $ref: '#/components/responses/ServerError' }
+    post:
+      tags: [Users]
+      summary: Create a user
+      description: The password is stored only as a bcrypt hash. The e-mail is saved in lower case.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserCreate' }
+            example: { name: Ana Test, email: ana@example.com, password: Secret123 }
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '500': { $ref: '#/components/responses/ServerError' }
+  /users/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Users]
+      summary: Get one user
+      responses:
+        '200':
+          description: The user
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/ServerError' }
+    put:
+      tags: [Users]
+      summary: Update a user
+      description: Only the fields that are sent are changed. At least one field is required.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserUpdate' }
+            example: { name: Ana Renamed, isActive: true }
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '500': { $ref: '#/components/responses/ServerError' }
+    delete:
+      tags: [Users]
+      summary: Delete a user
+      description: Also deletes the user's watchlist items and reviews (database cascade).
+      responses:
+        '200': { $ref: '#/components/responses/Deleted' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/ServerError' }
+  /titles:
+    get:
+      tags: [Titles]
+      summary: List titles (optionally filtered)
+      parameters:
+        - name: search
+          in: query
+          description: Part of the title text
+          schema: { type: string }
+        - name: type
+          in: query
+          schema: { type: string, enum: [movie, tv] }
+        - name: genreId
+          in: query
+          schema: { type: integer, minimum: 1 }
+      responses:
+        '200':
+          description: Matching titles, each with its genres
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TitleListResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '500': { $ref: '#/components/responses/ServerError' }
+    post:
+      tags: [Titles]
+      summary: Create a title
+      description: |
+        `genreIds` (optional) links existing genres to the new title. A rejected request creates nothing.
+        The pair (tmdbId, mediaType) must be unique.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TitleWrite' }
+            example: { mediaType: movie, title: The Last Lighthouse, releaseDate: '2024-03-15', genreIds: [1, 5] }
+      responses:
+        '201':
+          description: Title created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TitleResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '500': { $ref: '#/components/responses/ServerError' }
+  /titles/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Titles]
+      summary: Get one title (with its genres)
+      responses:
+        '200':
+          description: The title
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TitleResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/ServerError' }
+    put:
+      tags: [Titles]
+      summary: Update a title
+      description: Only the fields that are sent are changed. If `genreIds` is sent, it replaces all genres of the title.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TitleWrite' }
+            example: { title: New title, genreIds: [1] }
+      responses:
+        '200':
+          description: Title updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TitleResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '500': { $ref: '#/components/responses/ServerError' }
+    delete:
+      tags: [Titles]
+      summary: Delete a title
+      description: Also deletes its genre links, watchlist items and reviews (database cascade).
+      responses:
+        '200': { $ref: '#/components/responses/Deleted' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/ServerError' }
+  /titles/{titleId}/genres:
+    put:
+      tags: [Title genres]
+      summary: Replace all genres of a title
+      parameters:
+        - name: titleId
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [genreIds]
+              properties:
+                genreIds:
+                  type: array
+                  items: { type: integer, minimum: 1 }
+            example: { genreIds: [2, 3] }
+      responses:
+        '200':
+          description: The new links of the title
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TitleGenreListResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/ServerError' }
+  /genres:
+    get:
+      tags: [Genres]
+      summary: List all genres
+      responses:
+        '200':
+          description: All genres
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GenreListResponse' }
+        '500': { $ref: '#/components/responses/ServerError' }
+    post:
+      tags: [Genres]
+      summary: Create a genre
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/GenreWrite' }
+            example: { name: Documentary }
+      responses:
+        '201':
+          description: Genre created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GenreResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '500': { $ref: '#/components/responses/ServerError' }
+  /genres/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Genres]
+      summary: Get one genre
+      responses:
+        '200':
+          description: The genre
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GenreResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/ServerError' }
+    put:
+      tags: [Genres]
+      summary: Rename a genre
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/GenreWrite' }
+            example: { name: Documentary }
+      responses:
+        '200':
+          description: Genre updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GenreResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '500': { $ref: '#/components/responses/ServerError' }
+    delete:
+      tags: [Genres]
+      summary: Delete a genre
+      description: Removes its links to titles; the titles themselves stay.
+      responses:
+        '200': { $ref: '#/components/responses/Deleted' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/ServerError' }
+  /title-genres:
+    get:
+      tags: [Title genres]
+      summary: List title-genre links
+      parameters:
+        - name: titleId
+          in: query
+          schema: { type: integer, minimum: 1 }
+        - name: genreId
+          in: query
+          schema: { type: integer, minimum: 1 }
+      responses:
+        '200':
+          description: Matching links
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TitleGenreListResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '500': { $ref: '#/components/responses/ServerError' }
+    post:
+      tags: [Title genres]
+      summary: Add one genre to a title
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TitleGenre' }
+            example: { titleId: 1, genreId: 2 }
+      responses:
+        '201':
+          description: Link created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TitleGenreResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '500': { $ref: '#/components/responses/ServerError' }
+  /title-genres/{titleId}/{genreId}:
+    delete:
+      tags: [Title genres]
+      summary: Remove one genre from a title
+      parameters:
+        - name: titleId
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+        - name: genreId
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      responses:
+        '200': { $ref: '#/components/responses/Deleted' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/ServerError' }
+  /watchlist-items:
+    get:
+      tags: [Watchlist items]
+      summary: List watchlist items
+      parameters:
+        - name: userId
+          in: query
+          schema: { type: integer, minimum: 1 }
+        - name: status
+          in: query
+          description: Needs userId as well
+          schema: { $ref: '#/components/schemas/WatchStatus' }
+      responses:
+        '200':
+          description: Matching items
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WatchlistItemListResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '500': { $ref: '#/components/responses/ServerError' }
+    post:
+      tags: [Watchlist items]
+      summary: Add a title to a user's watchlist
+      description: Status defaults to planned (progress 0). Status completed without progress gets 100. A user can have a title only once.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WatchlistItemCreate' }
+            example: { userId: 1, titleId: 3, status: watching, progressPct: 40, progressNote: Season 1 Episode 4 }
+      responses:
+        '201':
+          description: Item created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WatchlistItemResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '500': { $ref: '#/components/responses/ServerError' }
+  /watchlist-items/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Watchlist items]
+      summary: Get one watchlist item
+      responses:
+        '200':
+          description: The item
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WatchlistItemResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/ServerError' }
+    put:
+      tags: [Watchlist items]
+      summary: Update status, progress or note
+      description: Only the fields that are sent are changed. Setting status planned resets progress to 0. The user and title of an item cannot be changed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WatchlistItemUpdate' }
+            example: { status: completed }
+      responses:
+        '200':
+          description: Item updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WatchlistItemResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/ServerError' }
+    delete:
+      tags: [Watchlist items]
+      summary: Delete a watchlist item
+      responses:
+        '200': { $ref: '#/components/responses/Deleted' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/ServerError' }
+  /reviews:
+    get:
+      tags: [Reviews]
+      summary: List reviews
+      description: Each review includes the author's name as `userName`.
+      parameters:
+        - name: userId
+          in: query
+          schema: { type: integer, minimum: 1 }
+        - name: titleId
+          in: query
+          schema: { type: integer, minimum: 1 }
+      responses:
+        '200':
+          description: Matching reviews
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReviewListResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '500': { $ref: '#/components/responses/ServerError' }
+    post:
+      tags: [Reviews]
+      summary: Write a review
+      description: A user can review a title only once.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReviewCreate' }
+            example: { userId: 1, titleId: 3, rating: 4, body: Great pacing and a strong ending. }
+      responses:
+        '201':
+          description: Review created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReviewResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '500': { $ref: '#/components/responses/ServerError' }
+  /reviews/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Reviews]
+      summary: Get one review
+      responses:
+        '200':
+          description: The review
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReviewResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/ServerError' }
+    put:
+      tags: [Reviews]
+      summary: Change rating or text of a review
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReviewUpdate' }
+            example: { rating: 5 }
+      responses:
+        '200':
+          description: Review updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReviewResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/ServerError' }
+    delete:
+      tags: [Reviews]
+      summary: Delete a review
+      responses:
+        '200': { $ref: '#/components/responses/Deleted' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/ServerError' }
+  /external/titles/search:
+    get:
+      tags: [External API (TMDB)]
+      summary: Search movies and TV shows in TMDB
+      description: |
+        Calls TMDB from the backend and returns a small, clean list. People and other result types are dropped.
+        Needs a TMDB token in `backend/config/config.php`.
+      parameters:
+        - name: query
+          in: query
+          required: true
+          description: Title to search for (1 to 100 characters)
+          schema: { type: string, minLength: 1, maxLength: 100 }
+          example: matrix
+        - name: type
+          in: query
+          schema: { type: string, enum: [all, movie, tv], default: all }
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 500, default: 1 }
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExternalSearchResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+        '504': { $ref: '#/components/responses/Timeout' }
+        '500': { $ref: '#/components/responses/ServerError' }
+  /external/titles/{mediaType}/{tmdbId}:
+    get:
+      tags: [External API (TMDB)]
+      summary: Details of one TMDB movie or TV show
+      parameters:
+        - name: mediaType
+          in: path
+          required: true
+          schema: { type: string, enum: [movie, tv] }
+        - name: tmdbId
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+          example: 603
+      responses:
+        '200':
+          description: Title details
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExternalDetailsResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+        '504': { $ref: '#/components/responses/Timeout' }
+        '500': { $ref: '#/components/responses/ServerError' }
+components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      description: Whole number from 1 to 4294967295
+      schema: { type: integer, minimum: 1 }
+  responses:
+    ValidationError:
+      description: Invalid input (400)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { success: false, message: Validation failed, errors: { name: must be 1 to 60 characters } }
+    NotFound:
+      description: Record not found (404)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { success: false, message: Title not found, errors: {} }
+    Conflict:
+      description: Duplicate or conflicting record (409)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { success: false, message: This e-mail address is already registered, errors: {} }
+    ServerError:
+      description: Unexpected server error (500). No details are exposed.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    BadGateway:
+      description: TMDB sent a bad or failed answer (502)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Unavailable:
+      description: TMDB is not configured, rejected the token, is busy or cannot be reached (503)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { success: false, message: The external movie database is not configured on the server., errors: {} }
+    Timeout:
+      description: TMDB did not answer in time (504)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Deleted:
+      description: Deleted
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/DeletedResponse' }
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [success, message, errors]
+      properties:
+        success: { type: boolean, example: false }
+        message: { type: string }
+        errors:
+          type: object
+          description: Field name to problem (empty for non-validation errors)
+          additionalProperties: { type: string }
+    DeletedResponse:
+      type: object
+      required: [success, data, message]
+      properties:
+        success: { type: boolean, example: true }
+        data: { type: object, nullable: true }
+        message: { type: string }
+    WatchStatus:
+      type: string
+      enum: [planned, watching, completed]
+    User:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        name: { type: string, example: Demo User }
+        email: { type: string, format: email }
+        role: { type: string, enum: [user, admin] }
+        isActive: { type: boolean }
+        createdAt: { type: string, example: '2026-08-14 09:00:00' }
+        updatedAt: { type: string, example: '2026-08-14 09:00:00' }
+    UserCreate:
+      type: object
+      required: [name, email, password]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 60 }
+        email: { type: string, format: email, maxLength: 255 }
+        password: { type: string, minLength: 8, maxLength: 72, description: At least one letter and one number }
+        role: { type: string, enum: [user, admin], default: user }
+        isActive: { type: boolean, default: true }
+    UserUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 60 }
+        email: { type: string, format: email, maxLength: 255 }
+        password: { type: string, minLength: 8, maxLength: 72 }
+        role: { type: string, enum: [user, admin] }
+        isActive: { type: boolean }
+    Genre:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        name: { type: string, example: Drama }
+    GenreWrite:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 40 }
+    Title:
+      type: object
+      properties:
+        id: { type: integer }
+        tmdbId: { type: integer, nullable: true }
+        mediaType: { type: string, enum: [movie, tv] }
+        title: { type: string }
+        releaseDate: { type: string, format: date, nullable: true }
+        posterPath: { type: string, nullable: true }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+        genres:
+          type: array
+          items: { $ref: '#/components/schemas/Genre' }
+    TitleWrite:
+      type: object
+      description: For POST, mediaType and title are required. For PUT, send only what changes.
+      properties:
+        mediaType: { type: string, enum: [movie, tv] }
+        title: { type: string, minLength: 1, maxLength: 200 }
+        tmdbId: { type: integer, minimum: 1, nullable: true }
+        releaseDate: { type: string, format: date, nullable: true }
+        posterPath: { type: string, maxLength: 255, nullable: true }
+        genreIds:
+          type: array
+          items: { type: integer, minimum: 1 }
+    TitleGenre:
+      type: object
+      required: [titleId, genreId]
+      properties:
+        titleId: { type: integer, minimum: 1 }
+        genreId: { type: integer, minimum: 1 }
+    WatchlistItem:
+      type: object
+      properties:
+        id: { type: integer }
+        userId: { type: integer }
+        titleId: { type: integer }
+        status: { $ref: '#/components/schemas/WatchStatus' }
+        progressPct: { type: integer, minimum: 0, maximum: 100 }
+        progressNote: { type: string, nullable: true }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+    WatchlistItemCreate:
+      type: object
+      required: [userId, titleId]
+      properties:
+        userId: { type: integer, minimum: 1 }
+        titleId: { type: integer, minimum: 1 }
+        status: { $ref: '#/components/schemas/WatchStatus' }
+        progressPct: { type: integer, minimum: 0, maximum: 100 }
+        progressNote: { type: string, maxLength: 100 }
+    WatchlistItemUpdate:
+      type: object
+      properties:
+        status: { $ref: '#/components/schemas/WatchStatus' }
+        progressPct: { type: integer, minimum: 0, maximum: 100 }
+        progressNote: { type: string, maxLength: 100 }
+    Review:
+      type: object
+      properties:
+        id: { type: integer }
+        userId: { type: integer }
+        titleId: { type: integer }
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        body: { type: string }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+        userName: { type: string, description: Only in the list endpoint }
+    ReviewCreate:
+      type: object
+      required: [userId, titleId, rating, body]
+      properties:
+        userId: { type: integer, minimum: 1 }
+        titleId: { type: integer, minimum: 1 }
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        body: { type: string, minLength: 1, maxLength: 5000 }
+    ReviewUpdate:
+      type: object
+      properties:
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        body: { type: string, minLength: 1, maxLength: 5000 }
+    ExternalTitle:
+      type: object
+      description: One movie or TV show from TMDB, cleaned
+      properties:
+        tmdbId: { type: integer, example: 603 }
+        mediaType: { type: string, enum: [movie, tv] }
+        title: { type: string }
+        releaseDate: { type: string, nullable: true }
+        posterUrl: { type: string, nullable: true, description: Full image URL }
+        overview: { type: string }
+        rating: { type: number, nullable: true, description: 'TMDB average rating from 0 to 10, one decimal' }
+    ExternalTitleDetails:
+      allOf:
+        - $ref: '#/components/schemas/ExternalTitle'
+        - type: object
+          properties:
+            genres:
+              type: array
+              items: { type: string }
+            runtimeMinutes: { type: integer, nullable: true }
+            seasons: { type: integer, nullable: true, description: TV shows only }
+    UserResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        data: { $ref: '#/components/schemas/User' }
+        message: { type: string }
+    UserListResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        data: { type: array, items: { $ref: '#/components/schemas/User' } }
+        message: { type: string }
+    GenreResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        data: { $ref: '#/components/schemas/Genre' }
+        message: { type: string }
+    GenreListResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        data: { type: array, items: { $ref: '#/components/schemas/Genre' } }
+        message: { type: string }
+    TitleResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        data: { $ref: '#/components/schemas/Title' }
+        message: { type: string }
+    TitleListResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        data: { type: array, items: { $ref: '#/components/schemas/Title' } }
+        message: { type: string }
+    TitleGenreResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        data: { $ref: '#/components/schemas/TitleGenre' }
+        message: { type: string }
+    TitleGenreListResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        data: { type: array, items: { $ref: '#/components/schemas/TitleGenre' } }
+        message: { type: string }
+    WatchlistItemResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        data: { $ref: '#/components/schemas/WatchlistItem' }
+        message: { type: string }
+    WatchlistItemListResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        data: { type: array, items: { $ref: '#/components/schemas/WatchlistItem' } }
+        message: { type: string }
+    ReviewResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        data: { $ref: '#/components/schemas/Review' }
+        message: { type: string }
+    ReviewListResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        data: { type: array, items: { $ref: '#/components/schemas/Review' } }
+        message: { type: string }
+    ExternalSearchResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        data:
+          type: object
+          properties:
+            results: { type: array, items: { $ref: '#/components/schemas/ExternalTitle' } }
+            page: { type: integer }
+            totalPages: { type: integer }
+            totalResults: { type: integer }
+        message: { type: string }
+    ExternalDetailsResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        data: { $ref: '#/components/schemas/ExternalTitleDetails' }
+        message: { type: string }

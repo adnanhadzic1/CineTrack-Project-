@@ -1,26 +1,25 @@
 /**
- * API service - FOUNDATION ONLY (Milestone 1).
- *
- * In the final architecture, ONLY files in js/services/ talk to the backend:
+ * API service. In the final architecture, ONLY files in js/services/ talk to the backend:
  *
  *   view -> service (this folder) -> fetch() -> FlightPHP route -> middleware -> service -> DAO -> MySQL
  *
- * The REST API does not exist yet, so nothing in M1 imports this file and every request fails
- * on purpose. That way the prototype can never pretend that data came from a server.
+ * Milestone 3: the backend exists, but the app is still connected to it in ONE place only:
+ * searchExternalTitles() below (the "Search TMDB" panel on Discover). Everything else still uses the mock
+ * data, so apiRequest() stays switched off (API_CONFIG.enabled = false) until M4 connects the rest.
  *
- * Planned usage from M4 (do not add before the backend exists):
+ * Planned usage from M4:
  *   const titles = await apiRequest('/titles?search=moon');
- *   const created = await apiRequest('/watchlist', { method: 'POST', body: { titleId: 5 } });
+ *   const created = await apiRequest('/watchlist-items', { method: 'POST', body: { userId: 1, titleId: 5 } });
  */
 
 export const API_CONFIG = {
   enabled: false,                 // set to true in M4, when the backend is connected
-  baseUrl: null,                  // e.g. 'http://localhost:8000' - decided in M3/M4
+  baseUrl: 'http://localhost:8001', // the FlightPHP backend (php -S localhost:8001 -t backend/public)
 };
 
 export class ApiNotAvailableError extends Error {
   constructor() {
-    super('The CineTrack API is not available yet (Milestone 1 is a static prototype).');
+    super('The CineTrack API is not connected to this part of the app yet (planned for Milestone 4).');
     this.name = 'ApiNotAvailableError';
   }
 }
@@ -39,4 +38,23 @@ export async function apiRequest(path, { method = 'GET', body = null } = {}) {
   });
   if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
   return response.json();
+}
+
+/**
+ * Milestone 3: search TMDB through OUR backend (GET /external/titles/search).
+ * This is the only backend call in the frontend so far; the rest of the app still uses mock data until M4,
+ * which is why API_CONFIG.enabled stays false. Returns { results, page, totalPages, totalResults }.
+ */
+export async function searchExternalTitles(query) {
+  let response;
+  try {
+    response = await fetch(`${API_CONFIG.baseUrl}/external/titles/search?query=${encodeURIComponent(query)}`, {
+      headers: { Accept: 'application/json' },
+    });
+  } catch {
+    throw new Error('The CineTrack backend is not reachable. Start it and try again.');
+  }
+  const body = await response.json().catch(() => null);
+  if (!response.ok || !body?.success) throw new Error(body?.message || `Request failed with status ${response.status}`);
+  return body.data;
 }

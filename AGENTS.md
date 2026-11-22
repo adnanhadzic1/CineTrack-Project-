@@ -28,19 +28,22 @@ view → frontend service → fetch → FlightPHP route → middleware → servi
 ```
 
 - **Strict separation.** The frontend is HTML/CSS/JS only. The backend is PHP returning JSON only. Never put PHP in frontend files or generate HTML in PHP.
-- **Routes** (`backend/routes/`): parse the request, call a service, return JSON with the right status code. No SQL, no business rules.
+- **Routes** (`backend/routes/`, M3): one file per entity (`users.php`, `titles.php`, `genres.php`, `title-genres.php`, `watchlist-items.php`, `reviews.php`) plus `external.php` (TMDB) and `helpers.php` (`respond`, `respondError`, `jsonBody`, `idQuery`, `textQuery`). A route parses the request, calls a service and returns JSON with the right status code. No SQL, no business rules, **never a DAO**. `backend/public/index.php` is the entry point: CORS, the JSON error/404/405 handlers, route includes, `Flight::start()`.
 - **Middleware** (`backend/middleware/`): authentication (401), role authorization (403), request logging, error handling. Reusable and registered in FlightPHP, never copied into routes.
-- **Services** (`backend/services/`): business rules and validation. The **only** layer that calls DAOs. The TMDB client lives here too.
+- **Services** (`backend/services/`, M3): `UserService`, `TitleService`, `GenreService`, `TitleGenreService`, `WatchlistItemService`, `ReviewService` hold business rules and validation and are the **only** layer that calls DAOs. Helpers: `Validator` (field checks), `Format` (snake_case to camelCase), `ApiException` (message + HTTP status + field errors; expected problems are thrown as this, everything else becomes a generic 500). `TmdbService` is the TMDB client (cURL, Bearer read token from config, timeouts, status mapping 404/503/502/504, cleaned camelCase output). Plain classes only: no interfaces, factories or containers.
+- **API conventions (M3):** JSON bodies and responses use camelCase (the database uses snake_case). Success: `{"success":true,"data":...,"message":...}`; error: `{"success":false,"message":...,"errors":{}}`. PUT changes only the fields that are sent. Duplicates are 409, invalid input 400 (with per-field `errors`), missing rows 404. `title_genres` has no id: use `TitleGenreService` / `TitleGenreDao` methods (`add`, `remove`, `replaceForTitle`). Passwords are hashed in `UserService`; no response ever contains `password_hash`.
+- **OpenAPI** (`backend/openapi.yaml`, served at `/openapi`) must list exactly the routes that exist; Swagger UI is `backend/public/docs/index.html` (CDN, pinned version). Change the spec in the same commit as any route change. The URL has no `.yaml` ending on purpose (PHP's built-in server answers such URLs with its own 404).
+- **M4 boundary:** M3 deliberately has **no** JWT, login, authentication/authorization middleware, request logging or central error middleware, and the API is open. Do not add them before M4. `userId` currently comes from the request body or query; in M4 it must come from the verified token.
 - **DAOs** (`backend/dao/`): database access only. `BaseDao` provides `run`, `fetchOne`, `fetchAll` and the generic `findAll`, `findById`, `create`, `update`, `delete`; each `<Entity>Dao` extends it, sets `$table` and the `$columns` it may write, and adds specific finders. All values go through `?` placeholders; column names come from `$columns`, never from the caller. `UserDao` never returns `password_hash` except `findByEmailWithPasswordHash()` (login only). A DAO method that changes several rows uses a transaction (`TitleGenreDao::replaceForTitle`). DAOs do not know about HTTP and are called only by services.
 - **Database connection**: `backend/config/Database.php` builds one PDO connection from `backend/config/config.php` (git-ignored; copy `config.example.php`). PDO uses exception mode, real prepared statements and utf8mb4. A failed connection is logged server-side and reported with a generic message.
 - **Database file**: `database/cinetrack.sql` is the schema plus fictional sample data and must stay in sync with `database/erd/erd.md`. Table names are plural `snake_case`; foreign keys are `<singular>_id`; constraint names use the prefixes `uq_`, `idx_`, `fk_`, `chk_`.
-- **Frontend services** (`frontend/js/services/`): the **only** frontend files that call `fetch`. `api-service.js` is for the backend (from M4). `template-service.js` loads the static HTML templates from `frontend/views/` and fills them with data; it never talks to the backend. Views and components must not call `fetch`.
+- **Frontend services** (`frontend/js/services/`): the **only** frontend files that call `fetch`. `api-service.js` is for the backend: since M3 it has one real call, `searchExternalTitles()` (Discover "Search TMDB" panel); `apiRequest()` stays disabled until M4. `template-service.js` loads the static HTML templates from `frontend/views/` and fills them with data; it never talks to the backend. Views and components must not call `fetch`.
 - **Views**: `frontend/views/<screen>.html` holds the page layout (course requirement "views (HTML templates)"). `frontend/views/<screen>-view.js` draws the template, fills `data-bind` / `data-slot` spots (escape anything placed in a slot with `esc()`) and attaches listeners. Every template must be used by a view.
 - Admin permissions do not include reading other users' private watchlists. Watchlist and review queries are always filtered by the user id from the verified JWT, never by a client-supplied user id.
 
 ## Folder structure
 
-See the tree in `README.md`. Backend folders (`routes`, `services`, `dao`, `middleware`, `config`, `logs`, `public`) exist from M1. `dao/`, `config/` and `tests/` contain code since M2; `routes`, `services`, `middleware` and `public` stay empty until M3 and M4. `database/erd/erd.md` is the ERD; `docs/` holds `PLAN.md` and `AI_LOG.md`.
+See the tree in `README.md`. Backend folders (`routes`, `services`, `dao`, `middleware`, `config`, `logs`, `public`) exist from M1. `dao/`, `config/` and `tests/` contain code since M2; `routes/`, `services/` and `public/` since M3; `middleware/` stays empty until M4. `backend/vendor/` (Composer) and `backend/config/config.php` are git-ignored. `database/erd/erd.md` is the ERD; `docs/` holds `PLAN.md` and `AI_LOG.md`.
 
 ## Naming conventions
 
@@ -66,7 +69,8 @@ See the tree in `README.md`. Backend folders (`routes`, `services`, `dao`, `midd
 - All SQL through PDO prepared statements.
 - Authorization is decided by the backend. A frontend role flag or hidden button is only a visual hint, and the M1 "Preview role" switch must never be treated as security.
 - Error responses must not leak stack traces, SQL or file paths. Log details server-side.
-- TMDB token stays on the server. The browser never calls TMDB directly.
+- TMDB token stays on the server (`tmdb.api_read_token` in the git-ignored config, placeholder `CHANGE_ME` in `config.example.php`). The browser never calls TMDB directly. The token is sent in an HTTP header, never in a URL, log or response.
+- The M3 API has no authentication: do not describe it as secure, and do not expose it publicly.
 
 ## Data honesty rules (important)
 
@@ -89,7 +93,8 @@ See the tree in `README.md`. Backend folders (`routes`, `services`, `dao`, `midd
 
 - Run `node --check` on changed JS files and exercise the app in a real browser (console must stay clean) before declaring work done.
 - For DAO work: import `database/cinetrack.sql` into a fresh database and run `php backend/tests/dao_test.php`. Add checks there when a DAO changes.
-- For backend work: test each endpoint, including the 400, 401, 403, 404 and 500 paths.
+- For backend work: test each endpoint, including the 400, 401, 403, 404 and 500 paths (401/403 only exist from M4). `php backend/tests/api_test.php` (needs DB + config; starts its own servers on ports 18001/18099 and uses a FAKE TMDB server) must end with "0 failed"; run `dao_test.php` too. Keep `openapi.yaml` valid (an OpenAPI validator) and in sync with the routes.
+- TMDB: tests use a fake server and prove nothing about the real TMDB; say so. Never put a real token in the repository, a test, a log or a response.
 - Report only checks that were actually run, and say what was not verified.
 
 ## Instructions to future AI assistants

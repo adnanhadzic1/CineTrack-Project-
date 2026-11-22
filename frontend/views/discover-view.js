@@ -1,13 +1,14 @@
 /**
  * Discover: search + filters + poster grid over the MOCK dataset.
- * Planned: in M3/M4 the search box will call our backend, which calls TMDB (the browser never calls TMDB directly).
+ * The "Search TMDB" panel at the bottom (M3) calls our backend, which calls TMDB (the browser never calls TMDB directly).
  */
-import { esc, mountPage } from '../js/utils/dom.js';
+import { esc, mountPage, typeLabel } from '../js/utils/dom.js';
 import { emptyState, errorState, loadingGrid } from '../js/components/feedback.js';
-import { titleCardHtml } from '../js/components/movie-card.js';
+import { posterHtml, titleCardHtml, typeChip, ratingPill } from '../js/components/movie-card.js';
 import { openTitleDetails } from '../js/components/title-modal.js';
 import { demoToast, showToast } from '../js/components/toast.js';
 import { renderTemplate, bindHtml } from '../js/services/template-service.js';
+import { searchExternalTitles } from '../js/services/api-service.js';
 import { state, getTitle, getWatchItemByTitle, addToWatchlist } from '../js/state.js';
 
 const SORTS = {
@@ -129,4 +130,38 @@ export function renderDiscoverView(container, route) {
   page.querySelector('#discover-sort').addEventListener('change', (event) => { view.sort = event.target.value; paintResults(); });
 
   paintResults();
+
+  // ---- Search TMDB through the backend (Milestone 3) ----
+  const tmdbResults = page.querySelector('#tmdb-results');
+  const tmdbCard = (item) => `
+    <article class="title-card">
+      <div class="title-card-poster">
+        ${posterHtml({ title: item.title, posterUrl: item.posterUrl, hue: item.tmdbId % 360 })}
+        <span class="title-card-tags">${typeChip(item.mediaType)}${ratingPill(item.rating ?? 0)}</span>
+      </div>
+      <div class="title-card-body">
+        <h3 class="title-card-name">${esc(item.title)}</h3>
+        <p class="title-card-meta">${item.releaseDate ? esc(item.releaseDate.slice(0, 4)) : 'Unknown year'} · ${typeLabel(item.mediaType)}</p>
+      </div>
+    </article>`;
+
+  async function searchTmdb() {
+    const query = view.q.trim();
+    if (!query) {
+      tmdbResults.innerHTML = emptyState({ iconName: 'search', title: 'Type a title first', text: 'Enter a movie or TV show name in the search box above.' });
+      return;
+    }
+    tmdbResults.innerHTML = loadingGrid(4);
+    try {
+      const data = await searchExternalTitles(query);
+      if (!page.isConnected) return;
+      tmdbResults.innerHTML = data.results.length
+        ? `<div class="title-grid">${data.results.map(tmdbCard).join('')}</div>`
+        : emptyState({ iconName: 'search', title: 'Nothing found in TMDB', text: `No movies or TV shows matched “${query}”.` });
+    } catch (error) {
+      if (!page.isConnected) return;
+      tmdbResults.innerHTML = `<div role="alert">${emptyState({ iconName: 'alert', title: 'TMDB search failed', text: error.message })}</div>`;
+    }
+  }
+  page.querySelector('#tmdb-search').addEventListener('click', searchTmdb);
 }
