@@ -34,9 +34,11 @@ Status: implemented on branch `milestone2` (started from the M1 branch `mileston
 - `backend/config/config.example.php` is committed; `config.php` with real credentials is git-ignored. `backend/config/Database.php` creates the shared PDO connection.
 - `BaseDao` with generic CRUD using prepared statements, and one DAO per entity (users, titles, genres, title_genres, watchlist_items, reviews).
 - `backend/tests/dao_test.php`: plain PHP check (schema, CRUD for every DAO, foreign keys, duplicates, special characters, cascades, connection errors).
-- Decided to skip Composer for M2: the DAO files load each other with `require_once`. FlightPHP is installed and its version verified in M3.
+- Decided to skip Composer for M2: the DAO files load each other with `require_once`. FlightPHP is installed in M3 (`flightphp/core` 3.19.5 verified in the sandbox; the student runs `composer install`).
 
-## M3 – Services, REST routes, OpenAPI, TMDB
+## M3 – Services, REST routes, OpenAPI, TMDB (implemented on branch `milestone3`; review pending)
+
+**Status:** all four parts are implemented and tested (see `docs/AI_LOG.md`). Not done and not possible in M3: live testing against the real TMDB (no token was available; only a fake TMDB server was used), 401/403 (no authentication until M4). Swagger UI loads its scripts from a CDN, which could not be reached from the development sandbox; the page was tested with the same pinned version served from a local npm copy.
 
 - One service per entity with validation and business rules (for example: one review per user per title, rating 1–5, status values). Services are the only layer that calls DAOs.
 - FlightPHP routes for CRUD on all entities, returning JSON and the status codes 200, 201, 400, 401, 403, 404 and 500.
@@ -50,7 +52,8 @@ Status: implemented on branch `milestone2` (started from the M1 branch `mileston
 - `backend/logs/info.log` and `error.log` with the line formats required by the course document.
 - Replace every use of `mock-data.js`/`state.js` with calls through `frontend/js/services/`. Attach the JWT, redirect on 401, show a message on 403, and make the UI role-aware.
 - Decide where the JWT lives on the client (see the security notes in AGENTS.md).
-- Show the TMDB-powered search in Discover.
+- Show the TMDB-powered search in Discover (a first "Search TMDB" panel already exists since M3; M4 should integrate it with the rest of the page).
+- Put authentication in front of the M3 routes; take `userId` from the JWT, not from the request; restrict `/users` and admin actions by role.
 
 ## M5 – Frontend MVC, validation, deployment
 
@@ -65,6 +68,7 @@ Plain HTML/CSS/vanilla JS on the front, and FlightPHP + PDO + MySQL on the back,
 
 ## Open items and risks
 
-- Packagist is not reachable from the sandbox used for M1, so FlightPHP has not been installed or verified. The `composer.json` constraint (`flightphp/core ^3.0`) was written by hand and must be confirmed in M2/M3.
-- Confirm the TMDB attribution and logo rules before M3.
+- Packagist was not reachable from the development sandbox, so in M3 FlightPHP 3.19.5 was installed from a GitHub clone through a local Composer path repository. No `composer.lock` is committed. The student must run `composer install` once and report any problem.
+- The TMDB integration is untested against the real TMDB. The attribution text is shown, but TMDB's current attribution and logo rules were not verified; check them before M5.
+- The M3 API is open (no authentication) until M4.
 - The LMS topic/repository submission is a manual step for the student.

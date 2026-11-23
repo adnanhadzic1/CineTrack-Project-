@@ -2,9 +2,11 @@
 /**
  * Creates the one PDO connection that all DAO classes share.
  *
- * The credentials are read from backend/config/config.php. That file is NOT committed (see .gitignore);
+ * The credentials come from backend/config/config.php (read by Config.php). That file is NOT committed (see .gitignore);
  * copy config.example.php to config.php and put your own values in it.
  */
+require_once __DIR__ . '/Config.php';
+
 class Database
 {
     private static ?PDO $connection = null;
@@ -13,12 +15,7 @@ class Database
     public static function connect(): PDO
     {
         if (self::$connection === null) {
-            $configFile = __DIR__ . '/config.php';
-            if (!is_file($configFile)) {
-                throw new RuntimeException('Missing backend/config/config.php. Copy config.example.php to config.php and fill it in.');
-            }
-            $config = require $configFile;
-            self::$connection = self::createConnection($config['db']);
+            self::$connection = self::createConnection(Config::get()['db']);
         }
         return self::$connection;
     }

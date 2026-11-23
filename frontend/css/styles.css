@@ -296,6 +296,9 @@ input[aria-invalid='true'], select[aria-invalid='true'], textarea[aria-invalid='
 .chip[aria-pressed='true'] { color: var(--accent-strong); border-color: var(--accent); background: rgba(242, 169, 59, 0.12); }
 .results-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 6px 0 16px; color: var(--muted); font-size: 0.9rem; }
 .demo-states { display: flex; align-items: center; gap: 4px; }
+.tmdb-panel { margin-top: 40px; }
+.tmdb-panel .btn { margin: 12px 0 16px; }
+.tmdb-attribution { margin-top: 16px; font-size: 0.8rem; }
 .results-count { margin: 0 0 12px; color: var(--muted); font-size: 0.9rem; }
 
 /* ---------- Empty / error / loading ---------- */

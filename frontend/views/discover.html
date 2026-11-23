@@ -36,3 +36,12 @@
 </div>
 
 <div id="discover-results"></div>
+
+<!-- Milestone 3: live search in TMDB. The browser only talks to the CineTrack backend, never to TMDB itself. -->
+<section class="tmdb-panel" aria-labelledby="tmdb-heading">
+  <h2 class="section-title" id="tmdb-heading">Search TMDB</h2>
+  <p class="muted">Live results from The Movie Database, fetched through the CineTrack backend (it must be running).</p>
+  <button type="button" class="btn btn-secondary" id="tmdb-search">Search TMDB for the text above</button>
+  <div id="tmdb-results" aria-live="polite"></div>
+  <p class="muted tmdb-attribution">This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
+</section>
